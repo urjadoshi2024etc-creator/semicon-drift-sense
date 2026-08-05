@@ -51,7 +51,7 @@ cd ~/semicon-drift-sense
 # Install dependencies from requirements.txt
 pip install -r requirements.txt
 
-```
+
 
 ## 📂 Repository Layout
 
@@ -68,3 +68,15 @@ semicon-drift-sense/
     └── 📁 train/
         ├── 📁 reference/           # High-dose 100x reference images (ref_000.png to ref_029.png)
         └── 📁 search/              # Low-dose 10x search images (search_000.png to search_029.png)
+
+```
+
+<details>
+<summary>📋 Click to view dependencies in <code>requirements.txt</code></summary>
+
+```text
+numpy>=1.21.0
+opencv-python>=4.5.0
+scipy>=1.7.0
+matplotlib>=3.4.0
+tqdm>=4.60.0
