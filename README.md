@@ -38,17 +38,33 @@ Wafer review and inspection tools in advanced semiconductor fabs rely on matchin
 
 ---
 
+## 🛠️ Local Quick Start
+
+### 1. Environment Setup
+
+Ensure you are working inside your project root folder (`~/semicon-drift-sense`):
+
+```bash
+# Navigate to project directory
+cd ~/semicon-drift-sense
+
+# Install dependencies from requirements.txt
+pip install -r requirements.txt
+
+```
+
 ## 📂 Repository Layout
 
 ```text
 semicon-drift-sense/
-├── ⚙️ generate_dram_dataset_v2.py  # Main dataset generator script (v2)
+├── ⚙️ generate_dram_dataset_v2.py  # Primary dataset generator script (v2)
 ├── 📄 JUSTIFICATION.md             # Detailed 300+ line academic & patent justification
+├── 📄 LICENSE                      # MIT Open Source License
 ├── 📄 README.md                    # Project documentation & guide
-├── 📄 requirements.txt             # Python dependencies
+├── 📄 requirements.txt             # Python environment dependencies
 ├── 📦 dram_sem_dataset_v2.zip      # Archived generated dataset
 └── 📁 dram_sem_dataset_v2/         # Generated synthetic dataset directory
     ├── 📊 labels.csv               # Ground-truth transformation & defect annotations
     └── 📁 train/
-        ├── 📁 reference/           # High-dose 100x reference images (ref_000.png - ref_029.png)
-        └── 📁 search/              # Low-dose 10x search images (search_000.png - search_029.png)
+        ├── 📁 reference/           # High-dose 100x reference images (ref_000.png to ref_029.png)
+        └── 📁 search/              # Low-dose 10x search images (search_000.png to search_029.png)
