@@ -7,7 +7,7 @@
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![OpenCV](https://img.shields.io/badge/OpenCV-4.5%2B-5C3EE8?style=for-the-badge&logo=opencv&logoColor=white)](https://opencv.org/)
 [![NumPy](https://img.shields.io/badge/NumPy-1.21%2B-013243?style=for-the-badge&logo=numpy&logoColor=white)](https://numpy.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.style=for-the-badge?style=for-the-badge)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.style=for-the-badge?style=for-the-badge)]([LICENSE](https://github.com/urjadoshi2024etc-creator/semicon-drift-sense/blob/main/LICENSE))
 
 *A high-precision synthetic data generator simulating multi-magnification SEM acquisition pairs (100x high-dose reference vs. 10x low-dose search scans) for advanced node DRAM wafer review, defect inspection, and drift-tolerant pattern matching.*
 
