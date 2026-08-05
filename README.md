@@ -80,3 +80,6 @@ opencv-python>=4.5.0
 scipy>=1.7.0
 matplotlib>=3.4.0
 tqdm>=4.60.0
+```
+
+</details>
