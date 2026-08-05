@@ -68,7 +68,9 @@ tqdm>=4.60.0
 </details>
 
 ### 2. Run the GeneratorTo generate or refresh synthetic image pairs and update labels.csv:Bashpython3 generate_dram_dataset_v2.py
-This will generate matched frames under dram_sem_dataset_v2/train/reference/ and dram_sem_dataset_v2/train/search/, and populate dram_sem_dataset_v2/labels.csv.📂 Repository LayoutPlaintextsemicon-drift-sense/
+This will generate matched frames under dram_sem_dataset_v2/train/reference/ and dram_sem_dataset_v2/train/search/, and populate dram_sem_dataset_v2/labels.csv.
+```
+📂 Repository LayoutPlaintextsemicon-drift-sense/
 ├── ⚙️ generate_dram_dataset_v2.py  # Primary dataset generator script (v2)
 ├── 📄 JUSTIFICATION.md             # Detailed 300+ line academic & patent justification
 ├── 📄 LICENSE                      # MIT License file
@@ -80,7 +82,7 @@ This will generate matched frames under dram_sem_dataset_v2/train/reference/ and
     └── 📁 train/
         ├── 📁 reference/           # High-dose 100x reference images (ref_000.png to ref_029.png)
         └── 📁 search/              # Low-dose 10x search images (search_000.png to search_029.png)
-
+```
 
 
 ## 🏗️ Pipeline ArchitectureThe image generation process separates structural world-space layout definition from tool-specific imaging physics:
