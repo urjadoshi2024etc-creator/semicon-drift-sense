@@ -69,7 +69,7 @@ tqdm>=4.60.0
 
 ---
 
-### 2. Run the GeneratorTo generate or refresh synthetic image pairs and update labels.csv:Bashpython3 generate_dram_dataset_v2.py
+### 2. Run the Generator : To generate or refresh synthetic image pairs and update labels.csv:Bashpython3 generate_dram_dataset_v2.py
 This will generate matched frames under dram_sem_dataset_v2/train/reference/ and dram_sem_dataset_v2/train/search/, and populate dram_sem_dataset_v2/labels.csv.
 ```
 📂 Repository LayoutPlaintextsemicon-drift-sense/
