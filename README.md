@@ -11,7 +11,7 @@
 
 *A high-precision synthetic data generator simulating multi-magnification SEM acquisition pairs (100x high-dose reference vs. 10x low-dose search scans) for advanced node DRAM wafer review, defect inspection, and drift-tolerant pattern matching.*
 
-[Key Features](#key-features) • [Local Quick Start](#local-quick-start) • [Repository Layout](#repository-layout) • [Pipeline Architecture](#pipeline-architecture) • [Dataset Schema](#dataset-schema) • [Physics Grounding](#physics--process-grounding)
+[Key Features](#-key-features) • [Local Quick Start](#-local-quick-start) • [Repository Layout](#-repository-layout) • [Pipeline Architecture](#-pipeline-architecture) • [Dataset Schema](#-dataset-schema) • [Physics Grounding](#-physics--process-grounding)
 
 ---
 
