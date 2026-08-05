@@ -88,7 +88,7 @@ This will generate matched frames under dram_sem_dataset_v2/train/reference/ and
 ---
 
 
-## 🏗️ Pipeline ArchitectureThe image generation process separates structural world-space layout definition from tool-specific imaging physics:
+## 🏗️ Pipeline Architecture : The image generation process separates structural world-space layout definition from tool-specific imaging physics:
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────────┐
 │                           1. WORLD SPECIFICATION                                │
