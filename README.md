@@ -105,15 +105,15 @@ DriftSense/
 
 ---
 
-# ⚙️ 1. Environment Setup
+## ⚙️ 1. Environment Setup
 
-## Clone the repository
+### Clone the repository
 ```bash
-git clone <this-repo-url>
-cd DriftSense
+git clone https://github.com/urjadoshi2024etc-creator/semicon-drift-sense.git
+cd semicon-drift-sense
 ```
 
-## Create a virtual environment
+### Create a virtual environment
 ```bash
 python -m venv venv_drift
 ```
