@@ -14,34 +14,37 @@
 </div>
 
 ---
+## 👥 Team NanoNav
 
-## 🧭 Overview
+> * **Karan Choudhary** ([@K478-tech](https://github.com/K478-tech))
+> * **Harsh** ([@Harsh689956](https://github.com/Harsh689956))
+> * **Urja Doshi** ([@urjadoshi2024etc-creator](https://github.com/urjadoshi2024etc-creator))
+> * **Priyadarshini** ([@PriyadarshiniK003](https://github.com/PriyadarshiniK003))
+
+*Developed for SEMICON India Hackathon 2026 (Problem Statement 02)*
+
+---
+
+# 🧭 Overview
 
 **DriftSense** is an AI-powered navigation-error recovery system designed for semiconductor wafer inspection tools.
 
-The system localizes a small SEM reference-image crop inside a larger SEM search image of the **same physical DRAM region**, while accounting for the challenges introduced by scale differences, periodic structures, imaging variation, and navigation uncertainty.
+The system localizes a small SEM reference-image crop inside a larger SEM search image of the **same physical DRAM region**, while handling scale differences, periodic structures, imaging variation, and navigation uncertainty.
 
 ### Core Task
 
-DriftSense takes:
+- Reference SEM crop: **1000 × 1000**, **1 nm/px**
+- Search SEM image: **1000 × 1000**, **10 nm/px**
+- Both images represent the same physical DRAM region.
+- Output: sub-pixel **`(x, y)`** center in search-image pixel coordinates.
 
-- A small **SEM reference-image crop** at **1 nm/px**
-- A larger **SEM search image** at **10 nm/px**
-
-Both images represent the **same physical DRAM region**.
-
-The model outputs the **sub-pixel `(x, y)` center** of the reference pattern in search-image pixel coordinates.
-
-> 🎯 **Primary challenge:**  
-> Disambiguating the true physical match from visually similar periodic repeats in the DRAM structure.
+> 🎯 **Primary challenge:** Disambiguating the true physical match from visually similar periodic repeats in DRAM structures.
 
 ---
 
 # 🧠 1. Problem Statement
 
-Wafer inspection tools repeatedly navigate to precise physical locations on semiconductor dies.
-
-Even very small navigation errors can accumulate due to factors such as:
+Wafer inspection tools repeatedly navigate to precise physical locations on semiconductor dies. Small navigation errors can result from:
 
 - Stage translation errors
 - Mechanical drift
@@ -52,29 +55,25 @@ Even very small navigation errors can accumulate due to factors such as:
 - Periodic semiconductor structures
 - Spatial distortion
 
-For periodic structures such as DRAM, the challenge is especially difficult because many locations can look visually similar.
+For periodic structures such as DRAM, many locations can look visually similar. DriftSense therefore treats the task as a **learned spatial-localization problem**:
 
-Therefore, DriftSense treats the problem as a **learned spatial-localization task**:
-
-```bash
+```text
 Reference SEM Crop
         │
         ▼
-Feature Extraction
+ Feature Extraction
         │
         ▼
-Search SEM Image
+ Search SEM Image
         │
         ▼
 Spatial Localization
         │
         ▼
-Sub-pixel (x, y)
+ Sub-pixel (x, y)
 ```
 
-The goal is not merely to determine whether two images look similar.
-
-The goal is to determine:
+The goal is not simply to determine whether two images look similar, but to determine:
 
 > **Where exactly does the reference region occur inside the search image?**
 
@@ -84,7 +83,7 @@ The goal is to determine:
 
 DriftSense uses a **DRAM-style semiconductor layout** consisting of periodic memory-cell, via, and line structures.
 
-This architecture was selected according to the problem statement's explicit:
+This architecture was selected according to the problem statement's:
 
 > **"participant's choice, judged equally either way"**
 
@@ -97,391 +96,227 @@ DRAM provides:
 - Highly periodic structures
 - Repeating memory-cell patterns
 - Line structures
-- Contact-via structures
+- Contact/via structures
 - Local variations in via density
 - Pitch-dependent visual ambiguity
-
-These characteristics provide a challenging environment for evaluating navigation-error recovery under periodic-pattern ambiguity.
 
 > **Note:** FinFET-style layouts are not implemented in the current version.
 
 ---
 
-# 🎯 3. Key Objective
+# 🎯 3. Objective
 
-The system is designed to solve:
-
-> **Given a small high-resolution SEM reference image and a larger lower-resolution SEM search image of the same DRAM region, determine the exact location of the reference region in the search image with sub-pixel accuracy.**
+Given a small high-resolution SEM reference image and a larger lower-resolution SEM search image of the same DRAM region, determine the exact location of the reference region in the search image with **sub-pixel accuracy**.
 
 ### Input
 
-```bash
-Reference Image
-1000 × 1000
-1 nm/px
-High-resolution SEM crop
-```
-
-and:
-
-```bash
-Search Image
-1000 × 1000
-10 nm/px
-Larger-field SEM image
-```
+| Image | Resolution | Scale | Description |
+|---|---:|---:|---|
+| Reference | 1000 × 1000 | 1 nm/px | High-resolution SEM crop |
+| Search | 1000 × 1000 | 10 nm/px | Larger-field SEM image |
 
 ### Output
 
-```bash
+```text
 (x, y)
 ```
 
-where:
-
 - `x` = predicted horizontal center
 - `y` = predicted vertical center
-- Coordinates are expressed in **search-image pixel space**
-- Prediction is **sub-pixel**
+- Coordinates are in search-image pixel space
+- Prediction is sub-pixel
 
 ---
 
 # 📁 4. Repository Structure
 
-```bash
+```text
 DriftSense/
 │
 ├── dataset_generator/
 │   └── generate_dram_dataset_v3.py
-│       └── Standalone synthetic dataset generator
 │
 ├── submission_model/
 │   ├── inference.py
-│   │   └── Standalone inference script (run this)
 │   ├── model_v6.py
-│   │   └── Model architecture
 │   └── driftsense_final.pt
-│       └── Trained weights
 │
 ├── training/
 │   ├── train_v6.py
-│   │   └── Training script
 │   ├── loss_v5.py
-│   │   └── Custom loss function
 │   ├── dram_dataset.py
-│   │   └── PyTorch Dataset wrapper
 │   ├── model_v6.py
-│   │   └── Architecture copy (self-contained training)
 │   ├── merge_train_v8.py
-│   │   └── Merges the two training datasets
 │   └── utils_v5.py
-│       └── Metrics, checkpoint I/O, and seeding
 │
 ├── failure_analysis/
 │   ├── analyze_v6_failures.py
-│   │   └── Per-pair error report + periodic-lock-on test
 │   ├── analyze_failure_causes.py
-│   │   └── Failure-vs-success generator-parameter comparison
 │   ├── analyze_pitch_density_bins.py
-│   │   └── Confound check + binned pitch/density analysis
 │   ├── model_v6.py
-│   │   └── Architecture copy
 │   └── dram_dataset.py
-│       └── Dataset wrapper copy
 │
 ├── evaluation_report.md
-│   └── Accuracy, timing, and failure analysis
-│
 ├── citations.md
-│   └── Augmentation/noise-model references
-│
 ├── requirements.txt
-│   └── Python dependencies
-│
 └── README.md
-    └── Project documentation
 ```
 
 ---
 
 # 🛠️ 5. Installation & Environment Setup
 
-> **All commands in this README are designed to be copy-pasted and executed from the repository root directory.**
+> **All commands below are intended to be run from the repository root directory.**
 
 ## 5.1 Clone the Repository
-
-### Windows — One-Command Python 3.11 Installation
-
-If you are setting up the project on Windows and do not already have Python 3.11, you can install it from **Command Prompt / PowerShell** using Windows Package Manager (`winget`):
-
-```cmd
-winget install --id Python.Python.3.11 -e --source winget
-```
-
-Then **close and reopen Command Prompt**, and verify:
-
-```cmd
-py -3.11 --version
-```
-
-> This command installs Python 3.11 through Windows' official package-management system. It requires `winget`, which is normally available on supported modern Windows installations. If `winget` is unavailable, use the manual Python installer linked in Section 5.2.
-
 
 ```bash
 git clone https://github.com/urjadoshi2024etc-creator/semicon-drift-sense.git
 cd semicon-drift-sense
 ```
 
-## 5.2 Python 3.11 — Required Before Creating the Virtual Environment
+## 5.2 Python 3.11 — IMPORTANT
 
-<details>
-<summary><strong>🐍 Click here to expand: Python 3.11 installation & setup</strong></summary>
-
-> **IMPORTANT:** This project was developed and tested with **Python 3.11**. The pinned dependencies in `requirements.txt` are intended for Python 3.11. Some versions, such as `contourpy==1.3.3`, require Python 3.11 or newer.
+> ⚠️ **This project was developed and tested with Python 3.11.**
 >
-> **Do not continue to dependency installation until `python --version` reports Python 3.11.x.**
+> The pinned dependencies in `requirements.txt` are intended for Python 3.11. Some dependencies, such as `contourpy==1.3.3`, require Python 3.11 or newer.
+>
+> **Do not continue with dependency installation until `python --version` reports Python 3.11.x.**
+>
+> If multiple Python versions are installed, make sure the virtual environment is created specifically with Python 3.11.
 
-### Step 0 — Check Your Existing Python Version
-
-Run:
+### Check Python
 
 ```bash
 python --version
-```
-
-Also check the exact Python executable:
-
-```bash
 python -c "import sys; print(sys.executable); print(sys.version)"
 ```
 
 Expected:
 
-```bash
+```text
 Python 3.11.x
 ```
 
-### 🪟 Windows — Automatic Python 3.11 Installation
-
-If Python 3.11 is not installed, Windows users can install it directly from **Command Prompt or PowerShell** using `winget`:
+### Windows — Install Python 3.11 if Needed
 
 ```cmd
 winget install --id Python.Python.3.11 -e --source winget
 ```
 
-After installation, **close and reopen Command Prompt / PowerShell**.
-
-Then verify:
+Close and reopen Command Prompt / PowerShell, then verify:
 
 ```cmd
 py -3.11 --version
 ```
 
-Expected:
+If `winget` is unavailable, install Python 3.11 from the official Python website:
 
-```bash
-Python 3.11.x
-```
+https://www.python.org/downloads/
 
-> **If `winget` is unavailable**, download Python 3.11 from the official Python website:
->
-> https://www.python.org/downloads/
+### Windows — Create the Virtual Environment
 
-### 🪟 Windows — Create the Environment with Python 3.11
-
-Once Python 3.11 is installed:
+**Command Prompt:**
 
 ```cmd
 py -3.11 -m venv venv_drift
-venv_drift\Scripts\activate.bat
+venv_drift\Scriptsctivate.bat
 python --version
 ```
 
-The final command must report:
-
-```bash
-Python 3.11.x
-```
-
-### 🪟 Windows PowerShell
+**PowerShell:**
 
 ```powershell
 py -3.11 -m venv venv_drift
-```
-
-If PowerShell blocks activation:
-
-```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
-```
-
-Then:
-
-```powershell
-.\venv_drift\Scripts\Activate.ps1
+.env_drift\Scripts\Activate.ps1
 python --version
 ```
-
-### 🐧 Linux / 🍎 macOS
-
-Verify Python 3.11:
-
-```bash
-python3.11 --version
-```
-
-Then:
-
-```bash
-python3.11 -m venv venv_drift
-source venv_drift/bin/activate
-python --version
-```
-
-Expected:
-
-```bash
-Python 3.11.x
-```
-
-### Final Verification
-
-After activation:
-
-```bash
-python --version
-python -c "import sys; print('Python executable:', sys.executable)"
-```
-
-The Python version must be:
-
-```bash
-Python 3.11.x
-```
-
-The executable path should point inside:
-
-```bash
-venv_drift/
-```
-
-> **Important:** If multiple Python versions are installed, do not use `python -m venv venv_drift` unless you have confirmed that `python` resolves to Python 3.11. On Windows, prefer `py -3.11`; on Linux/macOS, prefer `python3.11`.
-
-</details>
-
-## 5.3 Create and Activate the Virtual Environment
 
 ### Linux / macOS
 
-If you have not already created it in Section 5.2:
-
 ```bash
 python3.11 -m venv venv_drift
 source venv_drift/bin/activate
+python --version
 ```
 
-### Windows — PowerShell
+After activation, the terminal should show:
 
-```powershell
-py -3.11 -m venv venv_drift
-```
-
-If PowerShell blocks activation:
-
-```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
-```
-
-Then:
-
-```powershell
-.\venv_drift\Scripts\Activate.ps1
-```
-
-### Windows — Command Prompt (CMD)
-
-```cmd
-py -3.11 -m venv venv_drift
-venv_drift\Scripts\activate.bat
-```
-
-After activation, your terminal should show something similar to:
-
-```bash
+```text
 (venv_drift)
 ```
 
-Verify once more:
+Verify:
 
 ```bash
 python --version
 ```
 
-Expected:
+It must report:
 
-```bash
+```text
 Python 3.11.x
 ```
 
-## 5.4 Install PyTorch
+> **Important:** Do not use `python -m venv venv_drift` blindly when multiple Python versions are installed. On Windows, prefer `py -3.11`; on Linux/macOS, prefer `python3.11`.
 
-Install PyTorch **before** the remaining dependencies. Choose **one** option.
+---
 
-### Option A — NVIDIA GPU / CUDA 12.1
+# 📦 6. Install Dependencies
 
-This is the configuration used during project development:
+Install PyTorch first, then the remaining project dependencies.
 
-```bash
-pip install torch==2.5.1 torchvision==0.20.1 \
-    --index-url https://download.pytorch.org/whl/cu121
-```
-
-### Option B — CPU-only
+## Option A — NVIDIA GPU / CUDA 12.1
 
 ```bash
-pip install torch==2.5.1 torchvision==0.20.1 \
-    --index-url https://download.pytorch.org/whl/cpu
+python -m pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cu121
 ```
+
+## Option B — CPU-only
+
+```bash
+python -m pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cpu
+```
+
+> **Choose only one PyTorch installation option. Do not install both.**
 
 Then install the remaining dependencies:
 
 ```bash
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
-> `inference.py` automatically detects CUDA and falls back to CPU when CUDA is unavailable. No code change is required.
+`inference.py` automatically detects CUDA and falls back to CPU when CUDA is unavailable.
 
 ### Tested Development Environment
 
 | Component | Version / Configuration |
 |---|---|
 | Python | 3.11 |
-| PyTorch | 2.5.1 + CUDA 12.1 |
+| PyTorch | 2.5.1 |
+| CUDA | 12.1 |
 | GPU | NVIDIA RTX 4050 Laptop GPU |
 | VRAM | 6 GB |
 | CPU Mode | Supported |
 
 ---
 
-# 🚀 6. Quick Start — Verify the Submitted Model
+# 🚀 7. Quick Start — Verify the Submitted Model
 
-This is the fastest way to verify that the repository and pretrained submission work correctly. **No training is required.**
+No training is required for this verification.
 
-> **Important:** Run every command below from the **repository root**. You do not need to `cd submission_model`.
+> **Run the following commands from the repository root.**
 
-## 6.1 Generate One Sample Pair
+## 7.1 Generate One Sample Pair
 
 ```bash
-python dataset_generator/generate_dram_dataset_v3.py \
-    --n_pairs 1 \
-    --out_dir ./sample \
-    --profile medium \
-    --seed 1
+python dataset_generator\generate_dram_dataset_v3.py --n_pairs 1 --out_dir .\sample --profile medium --seed 1
 ```
 
 This creates:
 
-```bash
+```text
 sample/
 ├── reference/
 │   └── ref_00000.png
@@ -491,66 +326,65 @@ sample/
 └── config.json
 ```
 
-## 6.2 Run Inference
+## 7.2 Run Inference
 
 ```bash
-python submission_model/inference.py \
-    ./sample/reference/ref_00000.png \
-    ./sample/search/search_00000.png
+python submission_model\inference.py .\sample\reference\ref_00000.png .\sample\search\search_00000.png
 ```
 
-## 6.3 Expected Output
+Expected format:
 
-The script outputs one line in this format:
-
-```bash
+```text
 (x.xx, y.xx)
 ```
 
-This is the predicted center coordinate in **search-image pixel space**.
+The exact values depend on the generated sample.
 
-Compare the prediction against the ground-truth `center_x` and `center_y` values in:
+Compare the prediction with the ground-truth `center_x` and `center_y` values in:
 
-```bash
+```text
 sample/labels.csv
 ```
 
-> The exact prediction depends on the generated sample. Do **not** document a fixed output such as `(501.23, 498.87)` unless it was actually produced by the exact sample being distributed.
-
 ---
 
-# 🧪 7. Dataset Generator — Full Usage
+# 🧪 8. Dataset Generator
 
-The standalone DRAM dataset generator can be executed with:
+The standalone DRAM dataset generator supports:
 
-```bash
-python dataset_generator/generate_dram_dataset_v3.py \
-    --n_pairs <N> \
-    --out_dir <DIR> \
-    --profile {easy,medium,hard} \
-    --seed <SEED> \
-    [--workers <N>] \
-    [--style dram] \
-    [--pitch_min <NM> --pitch_max <NM>]
-```
-## 📂 Dataset Output Structure & Naming Conventions
-
-When you run `generate_dram_dataset_v3.py`, the output directory and image filenames follow strict, deterministic patterns.
-
-### 1. Default vs. Custom Output Directories
-
-* **Default Run (No `--out_dir` passed):**
-  Generates 30 pairs into `./dram_dataset_v3/`
-```bash
-  python dataset_generator/generate_dram_dataset_v3.py
+```text
+--n_pairs <N>
+--out_dir <DIR>
+--profile {easy,medium,hard}
+--seed <SEED>
+[--workers <N>]
+[--style dram]
+[--pitch_min <NM> --pitch_max <NM>]
 ```
 
-Explicit Output Directory (Recommended):
-- Generates $N$ pairs into your specified target folder (e.g., ./sample, ./train_v7, ./eval_v5)
-- python dataset_generator/generate_dram_dataset_v3.py --n_pairs 1 --out_dir ./sample --profile medium --seed 1
+Example:
 
-### 2. File Naming RulesInside any generated output directory ( <DIR>/ ), files are structured as follows:
 ```bash
+python dataset_generator\generate_dram_dataset_v3.py --n_pairs 1 --out_dir .\sample --profile medium --seed 1
+```
+
+### Generator Options
+
+| Option | Purpose |
+|---|---|
+| `--n_pairs` | Number of reference/search pairs |
+| `--out_dir` | Output directory |
+| `--profile` | `easy`, `medium`, or `hard` |
+| `--seed` | Reproducibility |
+| `--workers` | Number of generation workers |
+| `--style` | Current implementation supports `dram` |
+| `--pitch_min` / `--pitch_max` | Optional pitch-range override |
+
+The default style is `dram`. `finfet` is not implemented.
+
+### Dataset Output
+
+```text
 <DIR>/
 ├── reference/
 │   ├── ref_00000.png
@@ -565,176 +399,22 @@ Explicit Output Directory (Recommended):
 └── generation_log.txt
 ```
 
-#### ⚠️ Important Naming Note for Inference & Scripting:Reference images are named ref_XXXXX.png (located inside <DIR>/reference/).
+`labels.csv` contains ground-truth coordinates and generation parameters such as:
 
-Search images are named search_XXXXX.png ( located inside <DIR>/search/ ).Image indices are zero-padded to 5 digits (00000, 00001, 00002, etc.).Do not prefix paths with pair_ or append _ref/_search manually.
-
-### 3. Quick Verification ExamplesBash# Correct inference path for a custom ./sample run:
-
-```bash
-python submission_model/inference.py ./sample/reference/ref_00000.png ./sample/search/search_00000.png
-```
-
-### Correct inference path for a default ./dram_dataset_v3 run:
-```bash
-python submission_model/inference.py ./dram_dataset_v3/reference/ref_00000.png ./dram_dataset_v3/search/search_00000.png
-```
-
-**- Key Improvements Made**: Directly addresses the error you hit: Highlights the ref_XXXXX.png vs pair_ naming confusion.
-**- Explains default script behavior**: Clarifies why running without flags creates ./dram_dataset_v3/ while passing --out_dir ./sample creates ./sample/.
-**- Copy-paste ready paths**: Gives the exact working commands for both directory structures.
-
-## 7.1 Generator Options
-
-### `--n_pairs`
-
-Number of reference/search pairs to generate.
-
-Example:
-
-```bash
---n_pairs 9000
-```
-
-### `--out_dir`
-
-Directory in which the generated dataset is stored.
-
-Example:
-
-```bash
---out_dir ./train_v7
-```
-
-### `--profile`
-
-Controls the dataset generation profile:
-
-```bash
-easy
-medium
-hard
-```
-
-Example:
-
-```bash
---profile medium
-```
-
-### `--seed`
-
-Controls reproducibility.
-
-Example:
-
-```bash
---seed 7
-```
-
-### `--workers`
-
-Optional number of workers used for generation.
-
-Example:
-
-```bash
---workers 6
-```
-
-### `--style`
-
-Specifies the layout style.
-
-The current implementation supports:
-
-```bash
-dram
-```
-
-`dram` is the default and only implemented option.
-
-Passing:
-
-```bash
---style finfet
-```
-
-raises a clear error rather than silently generating a mismatched dataset.
-
-### `--pitch_min` / `--pitch_max`
-
-Optional overrides for the profile's pitch range.
-
-Both values must be supplied together.
-
-Example:
-
-```bash
---pitch_min 80 --pitch_max 120
-```
-
-These options are used for the **coarse-pitch supplemental dataset** described later.
-
----
-
-# 📦 8. Dataset Outputs
-
-Each generator run writes:
-
-```bash
-<DIR>/
-│
-├── reference/
-│   ├── ref_00000.png
-│   ├── ref_00001.png
-│   └── ...
-│
-├── search/
-│   ├── search_00000.png
-│   ├── search_00001.png
-│   └── ...
-│
-├── labels.csv
-│
-└── config.json
-```
-
-## 8.1 `labels.csv`
-`labels.csv` contains:
-- Ground-truth center coordinates
 - Reference/search paths
+- `center_x`
+- `center_y`
 - Pitch
 - Quality
 - Rotation
-- Defect counts
-- Other generation parameters used for each pair
+- Defect count
+- Other generation parameters
 
-Conceptually:
-
-```bash
-pair_id
-reference_path
-search_path
-center_x
-center_y
-pitch
-rotation
-defect_count
-...
-```
-
-## 8.2 `config.json`
-
-`config.json` stores the exact settings used for the generation run, including the seed.
-
-This makes dataset generation reproducible.
+`config.json` stores the exact generation settings, including the seed.
 
 ---
 
 # 🖼️ 9. Image Specifications
-
-Generated images are:
 
 | Property | Reference | Search |
 |---|---:|---:|
@@ -744,204 +424,92 @@ Generated images are:
 | Relative Scale | 1× | 10× |
 | Field of View | Smaller | Larger |
 
-The fixed 10× magnification ratio follows the problem-statement setup used by the project.
-
 ---
 
 # 🔬 10. DRAM Representation
 
-The dataset is specifically generated around a **DRAM-style periodic structure**.
+The dataset represents repeating semiconductor structures containing:
 
-The synthetic scene represents repeating semiconductor patterns containing:
-
-```bash
+```text
 DRAM Layout
 │
 ├── Periodic memory-cell structure
-│
 ├── Line structures
-│
 ├── Contact / via structures
-│
 └── Local pattern variation
 ```
 
-The periodic nature of DRAM introduces a central localization challenge:
+The periodic nature creates the central localization challenge:
 
-```bash
+```text
 Many regions look similar
-          ↓
+        ↓
 Visual matching becomes ambiguous
-          ↓
-Model must learn spatially discriminative features
-          ↓
-Correct physical location must be recovered
+        ↓
+Model learns spatially discriminative features
+        ↓
+Correct physical location is recovered
 ```
 
 ---
 
-# 🔄 11. Multi-Scale Imaging Concept
+# 🏋️ 11. Training Data & Model Reproduction
 
-DriftSense works with two views of the same physical region:
+The submitted checkpoint is:
 
-```bash
-                    SAME PHYSICAL DRAM REGION
-                              │
-                ┌─────────────┴─────────────┐
-                │                           │
-                ▼                           ▼
-       Reference Image              Search Image
-       ───────────────              ─────────────
-       1 nm/px                      10 nm/px
-       High resolution              Larger field of view
-       Small crop                   Broad search region
-                │                           │
-                └─────────────┬─────────────┘
-                              ▼
-                     DriftSense Model
-                              │
-                              ▼
-                       (x, y) Location
-```
-
----
-
-# 🏋️ 12. Reproducing the Training Data and Trained Model
-
-The submitted checkpoint:
-
-```bash
+```text
 submission_model/driftsense_final.pt
 ```
 
-was trained using a merged dataset consisting of:
+It was trained using:
+
+- Base dataset: **9,000 pairs**
+- Supplemental dataset: **4,000 pairs**
+- Total training pairs: **13,000**
+- Validation set: **300 pairs**
+- Independent test set: **100 pairs**
+
+The supplemental dataset focuses on the **80–120 nm pitch range**, which was added after failure analysis identified reduced accuracy in that regime.
+
+## 11.1 Generate Base Training Set
 
 ```bash
-Base dataset:
-9,000 pairs
-
-Supplemental dataset:
-4,000 pairs
-
-Total:
-13,000 training pairs
+python dataset_generator\generate_dram_dataset_v3.py --n_pairs 9000 --out_dir .\train_v7 --profile medium --seed 7 --workers 6
 ```
 
-The supplemental dataset is concentrated in the:
+## 11.2 Generate Supplemental Dataset
 
 ```bash
-80–120 nm pitch range
+python dataset_generator\generate_dram_dataset_v3.py --n_pairs 4000 --out_dir .\train_v7_coarse_pitch --profile medium --seed 17 --workers 6 --pitch_min 80 --pitch_max 120
 ```
 
-This dataset was added after failure analysis showed reduced accuracy in that regime.
-
-The exact reproduction workflow is described below.
-
----
-
-## Step 1 — Base Training Set
-
-Generate **9,000 pairs**:
+## 11.3 Generate Validation Set
 
 ```bash
-python dataset_generator/generate_dram_dataset_v3.py \
-    --n_pairs 9000 \
-    --out_dir ./train_v7 \
-    --profile medium \
-    --seed 7 \
-    --workers 6
+python dataset_generator\generate_dram_dataset_v3.py --n_pairs 300 --out_dir .\val_v5 --profile medium --seed 13579246
 ```
 
----
-
-## Step 2 — Coarse-Pitch Supplemental Set
-
-Generate **4,000 pairs** concentrated in the **80–120 nm pitch range**:
+## 11.4 Merge Training Datasets
 
 ```bash
-python dataset_generator/generate_dram_dataset_v3.py \
-    --n_pairs 4000 \
-    --out_dir ./train_v7_coarse_pitch \
-    --profile medium \
-    --seed 17 \
-    --workers 6 \
-    --pitch_min 80 \
-    --pitch_max 120
+python training\merge_train_v8.py
 ```
 
----
+This creates:
 
-## Step 3 — Validation Set
-
-Generate **300 pairs**:
-
-```bash
-python dataset_generator/generate_dram_dataset_v3.py \
-    --n_pairs 300 \
-    --out_dir ./val_v5 \
-    --profile medium \
-    --seed 13579246
-```
-
-This validation set is used during model training.
-
----
-
-## Step 4 — Merge Training Datasets
-
-Run:
-
-```bash
-python training/merge_train_v8.py
-```
-
-This must be executed from the directory containing:
-
-```bash
-train_v7/
-train_v7_coarse_pitch/
-```
-
-The merge script:
-
-- Combines the base and supplemental training datasets.
-- Verifies that row counts match exactly.
-- Refuses to proceed if the expected row counts do not match.
-- Refuses to overwrite an existing `train_v8/`.
-
-The resulting dataset is:
-
-```bash
+```text
 train_v8/
 ```
----
 
-## Step 5 — Train the Model
+The merge script checks the expected dataset structure and row counts and refuses to overwrite an existing `train_v8/`.
 
-Run:
+## 11.5 Train the Model
 
 ```bash
-python training/train_v6.py \
-    --train_dir ./train_v8 \
-    --val_dir ./val_v5 \
-    --output_dir ./runs/v6_train_v8 \
-    --epochs 100 \
-    --batch_size 4 \
-    --num_workers 4 \
-    --lr 0.0003 \
-    --weight_decay 1e-5 \
-    --seed 42 \
-    --lr_patience 20 \
-    --lr_factor 0.5 \
-    --grad_clip 5.0 \
-    --save_every 10 \
-    --early_stop_patience 15 \
-    --min_delta 0.5
+python training\train_v6.py --train_dir .\train_v8 --val_dir .\val_v5 --output_dir .\runs\v6_train_v8 --epochs 100 --batch_size 4 --num_workers 4 --lr 0.0003 --weight_decay 1e-5 --seed 42 --lr_patience 20 --lr_factor 0.5 --grad_clip 5.0 --save_every 10 --early_stop_patience 15 --min_delta 0.5
 ```
 
----
-
-# ⚙️ 13. Training Configuration
+### Training Configuration
 
 | Parameter | Value |
 |---|---:|
@@ -962,47 +530,16 @@ python training/train_v6.py \
 | Early Stop Patience | 15 |
 | Minimum Improvement | 0.5 px |
 
----
+For the documented training run:
 
-# 🛑 14. Early Stopping and Checkpoints
-
-The training configuration uses:
-
-```bash
-Early stopping patience:
-15 epochs
-
-Minimum improvement:
-0.5 px
-```
-
-For the run that produced the submitted checkpoint:
-
-```bash
-Best validation performance:
-Epoch 44
-
-Early stopping:
-Epoch 59
-```
-
-The best checkpoint is written to:
-
-```bash
-runs/v6_train_v8/checkpoints/best_model.pt
-```
-
-The submitted weights are:
-
-```bash
-submission_model/driftsense_final.pt
-```
-
-The latter is the checkpoint copied over after training.
+- Best validation performance: **Epoch 44**
+- Early stopping: **Epoch 59**
+- Best checkpoint: `runs/v6_train_v8/checkpoints/best_model.pt`
+- Submitted weights: `submission_model/driftsense_final.pt`
 
 ---
 
-# 🧪 15. Independent Test Set
+# 🧪 12. Independent Test Set
 
 An independent **100-pair** test set was held out from:
 
@@ -1012,216 +549,115 @@ An independent **100-pair** test set was held out from:
 
 Configuration:
 
-```bash
-Dataset:
-eval_v5
-
-Number of pairs:
-100
-
-Seed:
-24681357
+```text
+Dataset: eval_v5
+Pairs: 100
+Seed: 24681357
 ```
 
-The held-out set is used only for final reported evaluation numbers in:
+The held-out results are documented in:
 
-```bash
+```text
 evaluation_report.md
 ```
 
 ---
 
-# 🚀 16. Inference — Submission Entry Point
+# 🚀 13. Inference
 
-The inference command is:
-
-```bash
-python submission_model/inference.py \
-    <reference_image_path> \
-    <search_image_path>
-```
-
-This is the script intended to be run for the final submission/inference workflow.
-
----
-
-# 📥 17. Inference Input Requirements
-
-Both input images must be:
+The final submission entry point is:
 
 ```bash
-1000 × 1000
-Grayscale PNG
-```
-
-Expected scale:
-
-```bash
-Reference:
-1 nm/px
-
-Search:
-10 nm/px
-```
-
----
-
-# 📤 18. Inference Output
-
-The script outputs a single line:
-
-```bash
-(x, y)
+python submission_model\inference.py <reference_image_path> <search_image_path>
 ```
 
 Example:
 
 ```bash
-(421.37, 583.92)
+python submission_model\inference.py .\sample\reference\ref_00000.png .\sample\search\search_00000.png
 ```
 
-This represents the predicted center of the reference pattern within the search image in **search-image pixel coordinates**.
+Input requirements:
 
----
+```text
+Reference: 1000 × 1000 grayscale PNG, 1 nm/px
+Search:    1000 × 1000 grayscale PNG, 10 nm/px
+```
 
-# 🤖 19. Automatic Inference Behavior
+Output:
+
+```text
+(x, y)
+```
 
 `inference.py` automatically:
 
-1. Detects whether CUDA is available.
-2. Uses the GPU if available.
+1. Detects CUDA availability.
+2. Uses the GPU when available.
 3. Falls back to CPU otherwise.
 4. Loads `driftsense_final.pt`.
-5. Resolves the checkpoint relative to the script's own location.
-6. Loads the model architecture from `model_v6.py` in the same folder.
+5. Resolves the checkpoint relative to the inference script.
+6. Loads `model_v6.py` from the submission-model directory.
 
-No manual model-path changes are required.
-
-No additional inference arguments are needed beyond:
-
-```bash
-<reference_image_path>
-<search_image_path>
-```
+No manual model-path or device changes are required.
 
 ---
 
-# 🔍 20. Failure Analysis
+# 🔍 14. Failure Analysis
 
-Failure analysis is an important component of the DriftSense development workflow.
+The repository contains:
 
-The repository includes:
-
-```bash
+```text
 failure_analysis/
-│
 ├── analyze_v6_failures.py
 ├── analyze_failure_causes.py
 └── analyze_pitch_density_bins.py
 ```
 
-These scripts were used to investigate model failures and identify difficult generation regimes.
-
----
-
-# 📊 21. Failure Analysis Tools
-
-## 21.1 Per-Pair Error Report + Periodic Test
-
-Run:
+### Per-Pair Error Report
 
 ```bash
-python failure_analysis/analyze_v6_failures.py \
-    --checkpoint ./submission_model/driftsense_final.pt \
-    --data_dir ./eval_v5 \
-    --n_worst 25
+python failure_analysis\analyze_v6_failures.py --checkpoint .\submission_model\driftsense_final.pt --data_dir .\eval_v5 --n_worst 25
 ```
 
-This performs:
+### Failure-vs-Success Parameter Comparison
+
+```bash
+python failure_analysis\analyze_failure_causes.py --checkpoint .\submission_model\driftsense_final.pt --data_dir .\eval_v5
+```
+
+### Pitch / Density Binned Analysis
+
+```bash
+python failure_analysis\analyze_pitch_density_bins.py --checkpoint .\submission_model\driftsense_final.pt --data_dir .\eval_v5 --n_bins 5
+```
+
+These tools provide:
 
 - Per-pair error reporting
 - Worst-case analysis
-- Periodic pitch-multiple testing
-
----
-
-## 21.2 Failure-vs-Success Parameter Comparison
-
-Run:
-
-```bash
-python failure_analysis/analyze_failure_causes.py \
-    --checkpoint ./submission_model/driftsense_final.pt \
-    --data_dir ./eval_v5
-```
-
-This compares generator parameters across successful and failed predictions.
-
----
-
-## 21.3 Pitch / Density Binned Analysis
-
-Run:
-
-```bash
-python failure_analysis/analyze_pitch_density_bins.py \
-    --checkpoint ./submission_model/driftsense_final.pt \
-    --data_dir ./eval_v5 \
-    --n_bins 5
-```
-
-This performs:
-
-- Confound checking
+- Periodic-pitch-repeat testing
+- Generator-parameter comparison
 - Pitch-binned analysis
 - Via-density-binned analysis
 - Failure-rate analysis
 
----
+### Key Failure-Analysis Finding
 
-# 🧩 22. Failure Analysis Findings
-
-The evaluation workflow documented in `evaluation_report.md` reports that:
+The documented evaluation reports that:
 
 - Periodic-pitch-repeat confusion was explicitly tested.
-- Periodic-repeat confusion was not identified as the dominant remaining failure mode.
-- The dominant remaining failure pattern was traced to a confirmed, non-confounded correlation with **coarse pitch** and **low local reference-crop via density**.
-- The supplemental 80–120 nm pitch dataset was generated specifically to address this difficult regime.
-
-This resulted in a failure-driven refinement loop:
-
-```bash
-Initial Training
-      │
-      ▼
-Evaluate Model
-      │
-      ▼
-Failure Analysis
-      │
-      ▼
-Identify Difficult Pitch / Density Regime
-      │
-      ▼
-Generate Supplemental Dataset
-      │
-      ▼
-Merge Training Data
-      │
-      ▼
-Retrain Model
-      │
-      ▼
-Evaluate on Held-Out Data
-```
+- Periodic-repeat confusion was not the dominant remaining failure mode.
+- The dominant remaining failure pattern was associated with **coarse pitch** and **low local reference-crop via density**.
+- The supplemental **80–120 nm pitch** dataset was generated to address this difficult regime.
 
 ---
 
-# 📈 23. Results and Evaluation
+# 📊 15. Results & Evaluation
 
-Detailed results are documented in:
+Detailed results are available in:
 
-```bash
+```text
 evaluation_report.md
 ```
 
@@ -1235,262 +671,92 @@ The report includes:
 - Via-density analysis
 - Evidence supporting the identified failure regime
 
-The repository's failure-analysis scripts can be rerun against the submitted checkpoint.
-
-> **Requirement:** `eval_v5` must be generated first, as described in the training/evaluation workflow, or an equivalent held-out dataset must be generated using the same generator/profile.
+For failure-analysis reruns, `eval_v5` must be generated first, or an equivalent held-out dataset must be generated using the same generator/profile.
 
 ---
 
-# 🧭 24. Navigation Recovery Pipeline
+# 🧭 16. Navigation Recovery Pipeline
 
-The complete conceptual pipeline is:
-
-```bash
+```text
         SEM Inspection Tool
                 │
                 ▼
-       Reference SEM Crop
-                │
+        Reference SEM Crop
                 │
                 ├──────────────┐
                 │              │
                 ▼              ▼
-         High-resolution   Search SEM Image
-            Reference        Larger FOV
+        High-resolution   Search SEM Image
+           Reference          Larger FOV
                 │              │
                 └──────┬───────┘
                        ▼
                 DriftSense Model
                        │
                        ▼
-              Spatial Localization
+                Spatial Localization
                        │
                        ▼
-                 Sub-pixel (x,y)
+                  Sub-pixel (x,y)
                        │
                        ▼
-              Navigation Recovery
+                Navigation Recovery
 ```
 
 ---
 
-# 🔬 25. Why Periodic DRAM Is Challenging
+# 📈 17. Complete Reproduction Pipeline
 
-DRAM contains strongly repeating structures.
-
-Conceptually:
-
-```bash
-┌───┬───┬───┬───┬───┐
-│ A │ B │ A │ B │ A │
-├───┼───┼───┼───┼───┤
-│ B │ A │ B │ A │ B │
-├───┼───┼───┼───┼───┤
-│ A │ B │ A │ B │ A │
-└───┴───┴───┴───┴───┘
-```
-
-Multiple regions can contain visually similar patterns.
-
-Therefore, a model that relies only on local appearance may incorrectly lock onto a neighboring repeat.
-
-DriftSense is designed to learn spatially discriminative features that help distinguish the correct physical location.
-
----
-
-# 🧪 26. Complete Reproduction Pipeline
-
-The complete reproduction workflow is:
-
-```bash
-Step 1
-│
-├── Generate 9,000-pair base dataset
-│
-▼
-Step 2
-│
-├── Generate 4,000-pair coarse-pitch supplemental dataset
-│
-▼
-Step 3
-│
-├── Generate 300-pair validation dataset
-│
-▼
-Step 4
-│
-├── Merge training datasets
-│
-▼
-Step 5
-│
-├── Train model
-│
-▼
-Step 6
-│
-├── Select best checkpoint
-│
-▼
-Step 7
-│
-├── Evaluate on independent 100-pair test set
-│
-▼
-Step 8
-│
-└── Run failure analysis
+```text
+Generate 9,000-pair base dataset
+              ↓
+Generate 4,000-pair coarse-pitch dataset
+              ↓
+Generate 300-pair validation dataset
+              ↓
+Merge training datasets
+              ↓
+Train model
+              ↓
+Select best checkpoint
+              ↓
+Evaluate on independent 100-pair test set
+              ↓
+Run failure analysis
 ```
 
 ---
 
-# 📦 27. Complete Reproduction Commands
-
-## Base Training Dataset
-
-```bash
-python dataset_generator/generate_dram_dataset_v3.py \
-    --n_pairs 9000 \
-    --out_dir ./train_v7 \
-    --profile medium \
-    --seed 7 \
-    --workers 6
-```
-
-## Coarse-Pitch Supplemental Dataset
-
-```bash
-python dataset_generator/generate_dram_dataset_v3.py \
-    --n_pairs 4000 \
-    --out_dir ./train_v7_coarse_pitch \
-    --profile medium \
-    --seed 17 \
-    --workers 6 \
-    --pitch_min 80 \
-    --pitch_max 120
-```
-
-## Validation Dataset
-
-```bash
-python dataset_generator/generate_dram_dataset_v3.py \
-    --n_pairs 300 \
-    --out_dir ./val_v5 \
-    --profile medium \
-    --seed 13579246
-```
-
-## Merge
-
-```bash
-python training/merge_train_v8.py
-```
-
-## Training
-
-```bash
-python training/train_v6.py \
-    --train_dir ./train_v8 \
-    --val_dir ./val_v5 \
-    --output_dir ./runs/v6_train_v8 \
-    --epochs 100 \
-    --batch_size 4 \
-    --num_workers 4 \
-    --lr 0.0003 \
-    --weight_decay 1e-5 \
-    --seed 42 \
-    --lr_patience 20 \
-    --lr_factor 0.5 \
-    --grad_clip 5.0 \
-    --save_every 10 \
-    --early_stop_patience 15 \
-    --min_delta 0.5
-```
-
-## Inference
-
-```bash
-python submission_model/inference.py \
-    <reference_image_path> \
-    <search_image_path>
-```
-
----
-
-# 🧪 28. Quick Validation Workflow
-
-If you only want to verify that the repository works:
-
-```bash
-# Generate one sample pair
-python dataset_generator/generate_dram_dataset_v3.py \
-    --n_pairs 1 \
-    --out_dir ./sample \
-    --profile medium \
-    --seed 1
-
-# Run inference
-python submission_model/inference.py \
-    ./sample/reference/ref_00000.png \
-    ./sample/search/search_00000.png
-```
-
-Expected output:
-
-```bash
-(x.xx, y.xx)
-```
-
-Then compare the prediction against:
-
-```bash
-sample/labels.csv
-```
-
-using:
-
-```bash
-center_x
-center_y
-```
-
----
-
-# 🛠️ 29. Troubleshooting & Edge Cases
-
-If something fails while following the README, use the solutions below before modifying project code.
+# 🛠️ 18. Troubleshooting
 
 | Issue / Error | Likely Cause | Fix |
 |---|---|---|
-| `FileNotFoundError: submission_model/driftsense_final.pt` | Command was run from the wrong directory or the path is incorrect | Run commands from the repository root and use `./submission_model/driftsense_final.pt` |
-| `ps1 cannot be loaded because running scripts is disabled` | Windows PowerShell execution policy blocks virtual-environment activation | Run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force`, then activate `venv_drift` again |
-| `ModuleNotFoundError: No module named 'torch'` | Virtual environment is not active or PyTorch was not installed inside it | Activate `venv_drift`, install the correct PyTorch build, then run `pip install -r requirements.txt` |
-| `CUDA out of memory` | GPU VRAM is insufficient for the selected workload | Reduce dataset `--workers`, reduce training `--batch_size` (for example to `2`), or run inference on CPU |
-| `NotImplementedError: finfet style not implemented` | Unsupported generator style was selected | Use `--style dram` or omit `--style`; DRAM is the implemented style |
-| `FileNotFoundError` for sample images | Dataset generation did not finish or the inference path is wrong | Re-run the generator and verify `sample/reference/` and `sample/search/` exist |
-| Wrong PyTorch/CUDA installation | The selected install command does not match the machine | Reinstall PyTorch using either the CUDA 12.1 or CPU command in Section 5.4 |
-| Inference is slow on CPU | CUDA is unavailable | This is expected. `inference.py` automatically falls back to CPU; use an NVIDIA GPU for faster inference |
-| Training is very slow | CPU training or unsuitable worker/batch settings | Prefer a supported NVIDIA GPU and tune `--num_workers` / `--batch_size` for the available hardware |
-| `train_v8` already exists | A previous merged dataset is present | Remove or rename `train_v8/` only if you intentionally want to regenerate it, then rerun `merge_train_v8.py` |
-| Merge reports mismatched row counts | Training datasets were not generated with the expected structure/counts | Regenerate `train_v7` and `train_v7_coarse_pitch` using the exact commands in Section 27, then rerun the merge |
+| `FileNotFoundError: submission_model/driftsense_final.pt` | Wrong working directory or path | Run commands from the repository root |
+| PowerShell activation is blocked | Execution policy | Run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force` |
+| `ModuleNotFoundError: No module named 'torch'` | Environment is inactive or PyTorch is missing | Activate `venv_drift` and install the correct PyTorch build |
+| `CUDA out of memory` | Insufficient GPU VRAM | Reduce `--workers` / `--batch_size`, or use CPU |
+| `NotImplementedError: finfet style not implemented` | Unsupported generator style | Use `dram` or omit `--style` |
+| Sample images are missing | Generation failed or path is incorrect | Regenerate the sample and verify `sample/reference/` and `sample/search/` |
+| Wrong PyTorch/CUDA installation | Incorrect wheel selected | Install either the CUDA 12.1 or CPU build, not both |
+| CPU inference is slow | CUDA unavailable | Expected behavior; use an NVIDIA GPU for faster inference |
+| Training is very slow | CPU training or unsuitable settings | Prefer a supported NVIDIA GPU and tune workers/batch size |
+| `train_v8` already exists | Previous merged dataset exists | Remove/rename it only if you intentionally want to regenerate it |
+| Merge reports mismatched row counts | Training datasets are incorrect | Regenerate both training datasets using the exact commands above |
 
-## 🔎 General Diagnostic Checklist
+### General Diagnostic Checklist
 
-When an error occurs, check these in order:
-
-```bash
+```text
 1. Are you in the repository root?
        ↓
 2. Is (venv_drift) active?
        ↓
-3. Does PyTorch import successfully?
+3. Is Python 3.11.x being used?
        ↓
-4. Do the required files/directories exist?
+4. Does PyTorch import successfully?
        ↓
-5. Are paths written relative to the repository root?
+5. Do the required files/directories exist?
        ↓
-6. Does the GPU/CPU installation match the machine?
+6. Does the PyTorch installation match the machine?
        ↓
 7. Only then adjust workers/batch size or regenerate data
 ```
@@ -1502,9 +768,9 @@ python --version
 python -c "import torch; print(torch.__version__); print('CUDA available:', torch.cuda.is_available())"
 ```
 
-For the tested CUDA environment, CUDA should be available. For CPU-only installation, `CUDA available: False` is expected.
+For the CUDA environment, CUDA should be available. For CPU-only installation, `CUDA available: False` is expected.
 
-### Check that the submission checkpoint exists
+### Check the Submission Checkpoint
 
 ```bash
 python -c "from pathlib import Path; p=Path('submission_model/driftsense_final.pt'); print('Checkpoint exists:', p.exists())"
@@ -1514,7 +780,7 @@ python -c "from pathlib import Path; p=Path('submission_model/driftsense_final.p
 
 ---
 
-# 📚 30. Documentation
+# 📚 19. Documentation
 
 | File | Purpose |
 |---|---|
@@ -1523,31 +789,11 @@ python -c "from pathlib import Path; p=Path('submission_model/driftsense_final.p
 | `citations.md` | Augmentation and SEM noise-model references |
 | `requirements.txt` | Python dependencies |
 
----
-
-# 📖 31. Citations & Scientific Justification
-
-Augmentation and SEM noise-model choices are justified against public literature in:
-
-```bash
-citations.md
-```
-
-The references are cross-referenced with the idea-submission PDF.
-
-The repository therefore separates:
-
-```bash
-Implementation
-      +
-Scientific / Literature Justification
-      +
-Experimental Evaluation
-```
+Augmentation and SEM noise-model choices are justified against public literature in `citations.md`.
 
 ---
 
-# 🧾 32. Project Summary
+# 🧾 20. Project Summary
 
 | Category | DriftSense |
 |---|---|
@@ -1577,19 +823,16 @@ Experimental Evaluation
 | GPU Tested | NVIDIA RTX 4050 Laptop GPU |
 | GPU VRAM | 6 GB |
 | CPU Support | Yes |
-| Dataset Generator | `generate_dram_dataset_v3.py` |
-| Training Script | `train_v6.py` |
-| Inference Script | `submission_model/inference.py` |
 
 ---
 
-# 🏁 33. Final Takeaway
+# 🏁 21. Final Takeaway
 
-DriftSense approaches wafer-navigation recovery as a **learned spatial localization problem** over SEM images.
+DriftSense approaches wafer-navigation recovery as a **learned spatial-localization problem** over SEM images.
 
 The system combines:
 
-```bash
+```text
 DRAM-specific synthetic data
           +
 Multi-scale SEM image generation
@@ -1603,13 +846,11 @@ Failure-driven dataset refinement
 Independent evaluation
 ```
 
-The central objective is not simply to identify whether two SEM images look similar.
-
-Instead, the model must determine:
+The central objective is:
 
 > **Where exactly does the reference region occur inside the search image?**
 
-This distinction is critical for navigation-error recovery in periodic semiconductor structures, where multiple visually similar regions can coexist.
+This is critical for navigation-error recovery in periodic semiconductor structures, where multiple visually similar regions can coexist.
 
 ---
 
@@ -1617,7 +858,7 @@ This distinction is critical for navigation-error recovery in periodic semicondu
 
 ### **AI-Powered Navigation-Error Recovery for Wafer Inspection Tools**
 
-```bash
+```text
 Reference SEM Image
         +
 Search SEM Image
@@ -1626,12 +867,10 @@ Search SEM Image
    DriftSense AI
         │
         ▼
-Sub-pixel (x, y)
+  Sub-pixel (x, y)
         │
         ▼
-Accurate Site Recovery
+ Accurate Site Recovery
 ```
-
----
 
 **SEMICON India Hackathon 2026 — Track 2 — Problem Statement 02**
