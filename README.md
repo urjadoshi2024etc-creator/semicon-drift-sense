@@ -14,7 +14,7 @@
 </div>
 
 ---
-## 👥 NanoNav
+## 🔬 NanoNav
 ### **Navigate. Locate. Verify.**
 
 > * **Karan Choudhary** ([@K478-tech](https://github.com/K478-tech))
