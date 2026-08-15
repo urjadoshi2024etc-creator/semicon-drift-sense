@@ -565,7 +565,7 @@ Explicit Output Directory (Recommended):
 └── generation_log.txt
 ```
 
-#### ⚠️ Important Naming Note for Inference & Scripting:Reference images are named ref_XXXXX.png (located inside <DIR>/reference/ ).
+#### ⚠️ Important Naming Note for Inference & Scripting:Reference images are named ref_XXXXX.png (located inside <DIR>/reference/).
 
 Search images are named search_XXXXX.png ( located inside <DIR>/search/ ).Image indices are zero-padded to 5 digits (00000, 00001, 00002, etc.).Do not prefix paths with pair_ or append _ref/_search manually.
 
