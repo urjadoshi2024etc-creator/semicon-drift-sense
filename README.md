@@ -210,23 +210,106 @@ DriftSense/
 
 ## 5.1 Clone the Repository
 
+### Windows — One-Command Python 3.11 Installation
+
+If you are setting up the project on Windows and do not already have Python 3.11, you can install it from **Command Prompt / PowerShell** using Windows Package Manager (`winget`):
+
+```cmd
+winget install --id Python.Python.3.11 -e --source winget
+```
+
+Then **close and reopen Command Prompt**, and verify:
+
+```cmd
+py -3.11 --version
+```
+
+> This command installs Python 3.11 through Windows' official package-management system. It requires `winget`, which is normally available on supported modern Windows installations. If `winget` is unavailable, use the manual Python installer linked in Section 5.2.
+
+
 ```bash
 git clone https://github.com/urjadoshi2024etc-creator/semicon-drift-sense.git
 cd semicon-drift-sense
 ```
 
-## 5.2 Create and Activate a Virtual Environment
+## 5.2 Python 3.11 — Required Before Creating the Virtual Environment
 
-### Linux / macOS
+<details>
+<summary><strong>🐍 Click here to expand: Python 3.11 installation & setup</strong></summary>
+
+> **IMPORTANT:** This project was developed and tested with **Python 3.11**. The pinned dependencies in `requirements.txt` are intended for Python 3.11. Some versions, such as `contourpy==1.3.3`, require Python 3.11 or newer.
+>
+> **Do not continue to dependency installation until `python --version` reports Python 3.11.x.**
+
+### Step 0 — Check Your Existing Python Version
+
+Run:
 
 ```bash
-python3 -m venv venv_drift
-source venv_drift/bin/activate
+python --version
 ```
 
-### Windows — PowerShell
+Also check the exact Python executable:
 
-If PowerShell blocks activation, run:
+```bash
+python -c "import sys; print(sys.executable); print(sys.version)"
+```
+
+Expected:
+
+```bash
+Python 3.11.x
+```
+
+### 🪟 Windows — Automatic Python 3.11 Installation
+
+If Python 3.11 is not installed, Windows users can install it directly from **Command Prompt or PowerShell** using `winget`:
+
+```cmd
+winget install --id Python.Python.3.11 -e --source winget
+```
+
+After installation, **close and reopen Command Prompt / PowerShell**.
+
+Then verify:
+
+```cmd
+py -3.11 --version
+```
+
+Expected:
+
+```bash
+Python 3.11.x
+```
+
+> **If `winget` is unavailable**, download Python 3.11 from the official Python website:
+>
+> https://www.python.org/downloads/
+
+### 🪟 Windows — Create the Environment with Python 3.11
+
+Once Python 3.11 is installed:
+
+```cmd
+py -3.11 -m venv venv_drift
+venv_drift\Scripts\activate.bat
+python --version
+```
+
+The final command must report:
+
+```bash
+Python 3.11.x
+```
+
+### 🪟 Windows PowerShell
+
+```powershell
+py -3.11 -m venv venv_drift
+```
+
+If PowerShell blocks activation:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
@@ -235,14 +318,90 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 Then:
 
 ```powershell
-python -m venv venv_drift
+.\venv_drift\Scripts\Activate.ps1
+python --version
+```
+
+### 🐧 Linux / 🍎 macOS
+
+Verify Python 3.11:
+
+```bash
+python3.11 --version
+```
+
+Then:
+
+```bash
+python3.11 -m venv venv_drift
+source venv_drift/bin/activate
+python --version
+```
+
+Expected:
+
+```bash
+Python 3.11.x
+```
+
+### Final Verification
+
+After activation:
+
+```bash
+python --version
+python -c "import sys; print('Python executable:', sys.executable)"
+```
+
+The Python version must be:
+
+```bash
+Python 3.11.x
+```
+
+The executable path should point inside:
+
+```bash
+venv_drift/
+```
+
+> **Important:** If multiple Python versions are installed, do not use `python -m venv venv_drift` unless you have confirmed that `python` resolves to Python 3.11. On Windows, prefer `py -3.11`; on Linux/macOS, prefer `python3.11`.
+
+</details>
+
+## 5.3 Create and Activate the Virtual Environment
+
+### Linux / macOS
+
+If you have not already created it in Section 5.2:
+
+```bash
+python3.11 -m venv venv_drift
+source venv_drift/bin/activate
+```
+
+### Windows — PowerShell
+
+```powershell
+py -3.11 -m venv venv_drift
+```
+
+If PowerShell blocks activation:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+```
+
+Then:
+
+```powershell
 .\venv_drift\Scripts\Activate.ps1
 ```
 
 ### Windows — Command Prompt (CMD)
 
 ```cmd
-python -m venv venv_drift
+py -3.11 -m venv venv_drift
 venv_drift\Scripts\activate.bat
 ```
 
@@ -252,7 +411,19 @@ After activation, your terminal should show something similar to:
 (venv_drift)
 ```
 
-## 5.3 Install PyTorch
+Verify once more:
+
+```bash
+python --version
+```
+
+Expected:
+
+```bash
+Python 3.11.x
+```
+
+## 5.4 Install PyTorch
 
 Install PyTorch **before** the remaining dependencies. Choose **one** option.
 
@@ -1298,7 +1469,7 @@ If something fails while following the README, use the solutions below before mo
 | `CUDA out of memory` | GPU VRAM is insufficient for the selected workload | Reduce dataset `--workers`, reduce training `--batch_size` (for example to `2`), or run inference on CPU |
 | `NotImplementedError: finfet style not implemented` | Unsupported generator style was selected | Use `--style dram` or omit `--style`; DRAM is the implemented style |
 | `FileNotFoundError` for sample images | Dataset generation did not finish or the inference path is wrong | Re-run the generator and verify `sample/reference/` and `sample/search/` exist |
-| Wrong PyTorch/CUDA installation | The selected install command does not match the machine | Reinstall PyTorch using either the CUDA 12.1 or CPU command in Section 5.3 |
+| Wrong PyTorch/CUDA installation | The selected install command does not match the machine | Reinstall PyTorch using either the CUDA 12.1 or CPU command in Section 5.4 |
 | Inference is slow on CPU | CUDA is unavailable | This is expected. `inference.py` automatically falls back to CPU; use an NVIDIA GPU for faster inference |
 | Training is very slow | CPU training or unsuitable worker/batch settings | Prefer a supported NVIDIA GPU and tune `--num_workers` / `--batch_size` for the available hardware |
 | `train_v8` already exists | A previous merged dataset is present | Remove or rename `train_v8/` only if you intentionally want to regenerate it, then rerun `merge_train_v8.py` |
