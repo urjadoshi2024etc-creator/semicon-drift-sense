@@ -1,578 +1,227 @@
-<div align="center">
+# DriftSense — Evaluation Report
 
-# 📊 DriftSense — Evaluation Report
+**Model:** `driftsense_final.pt` (V6 architecture, trained on the merged
+`train_v8` dataset — see `README.md` Section 4 for exact reproduction
+steps). Best checkpoint selected at **epoch 44** by validation mean error;
+training run early-stopped at epoch 59 (patience 15, min improvement
+0.5px).
 
-### Independent evaluation, inference performance, and failure analysis
-
-**Model:** `driftsense_final.pt`  
-**Architecture:** V6  
-**Training Dataset:** merged `train_v8`  
-**Independent Test Set:** `eval_v5` — 100 pairs
-
-</div>
-
----
-
-## 🧭 Executive Summary
-
-DriftSense was evaluated on an **independent 100-pair test set** that was held out from all training and model-selection decisions.
-
-The submitted checkpoint:
-
-```text
-driftsense_final.pt
-```
-
-was selected at:
-
-```text
-Best checkpoint: Epoch 44
-Early stopping: Epoch 59
-Patience: 15 epochs
-Minimum improvement: 0.5 px
-```
-
-### Headline result
-
-> **80% of independent test pairs were localized within 10 pixels, with a median localization error of only 0.52 px.**
-
-The large difference between median and mean error is important: most examples are localized extremely accurately, while a smaller catastrophic-failure subset produces very large errors.
-
-The failure-analysis pipeline investigated multiple hypotheses and identified **coarse pitch / low local reference-crop information density** as the strongest confirmed structural difficulty. A targeted supplemental training set was then used to address that regime, producing a measurable improvement.
+**Independent test set:** `eval_v5` — 100 pairs, generated with
+`--profile medium --seed 24681357`, held out from all training and
+model-selection decisions. All headline numbers below are measured on
+this set unless stated otherwise.
 
 ---
 
-# 1. 🧪 Evaluation Setup
+# 1. Headline Accuracy
 
-## 1.1 Submitted Model
+## Independent test set — `eval_v5` (`n = 100`)
 
-| Property | Configuration |
-|---|---|
-| Model | `driftsense_final.pt` |
-| Architecture | V6 |
-| Training Dataset | merged `train_v8` |
-| Best Checkpoint | Epoch 44 |
-| Early Stopping | Epoch 59 |
-| Patience | 15 epochs |
-| Minimum Improvement | 0.5 px |
-
-The exact reproduction procedure is documented in:
-
-```text
-README.md
-```
-
-See the training/reproduction section for the complete dataset-generation, merge, and training commands.
-
----
-
-## 1.2 Independent Test Set
-
-All headline evaluation numbers in this report are measured on:
-
-```text
-eval_v5
-```
-
-Configuration:
-
-```text
-Number of pairs: 100
-Profile: medium
-Seed: 24681357
-```
-
-The test set was:
-
-- Held out from training
-- Held out from checkpoint selection
-- Held out from model-selection decisions
-- Used only for final reported evaluation
-
-This separation is important because it prevents the headline test numbers from being directly optimized during model development.
-
----
-
-# 2. 🎯 Headline Accuracy
-
-## `eval_v5` — n = 100
-
-| Metric | Result |
+| Metric | Value |
 |---|---:|
-| **Mean error** | **92.30 px** |
-| **Median error** | **0.52 px** |
-| **Minimum error** | **0.04 px** |
-| **Maximum error** | **818.84 px** |
-| **Within 10 px** | **80 / 100 (80.0%)** |
-| **Within 25 px** | **80 / 100 (80.0%)** |
-| **Within 50 px** | **80 / 100 (80.0%)** |
-| **Within 100 px** | **81 / 100 (81.0%)** |
+| Mean error | **92.30 px** |
+| Median error | **0.52 px** |
+| Minimum error | **0.04 px** |
+| Maximum error | **818.84 px** |
+| Within 10 px | **80 / 100 (80.0%)** |
+| Within 25 px | **80 / 100 (80.0%)** |
+| Within 50 px | **80 / 100 (80.0%)** |
+| Within 100 px | **81 / 100 (81.0%)** |
+
+## Validation set
+
+`val_v5` contains 300 pairs generated with seed `13579246` and was used
+during training for checkpoint selection. It was **not** used for the
+headline test-set numbers above.
+
+- Best validation mean error: **76.595 px**
+- Best epoch: **44**
+
+### Interpreting the mean / median gap
+
+The large gap between median error (**0.52 px**) and mean error
+(**92.30 px**) reflects two distinct performance regimes:
+
+1. The large majority of pairs are localized very accurately, often at
+   sub-pixel scale.
+2. A smaller subset of approximately 19–20% produces large errors,
+   dominating the mean.
+
+Both metrics are therefore reported deliberately. Median alone would
+overstate reliability, while mean alone would understate typical
+localization performance.
 
 ---
 
-## 2.1 Validation Set
+# 2. Inference Timing
 
-The validation set was:
+Inference was measured on 1000×1000 reference/search image pairs.
 
-```text
-Dataset: val_v5
-Pairs: 300
-Seed: 13579246
-```
-
-It was used during training for checkpoint selection and **was not used for the independent-test headline numbers above**.
-
-Best validation performance:
-
-```text
-Best mean error = 76.595 px
-Epoch = 44
-```
-
----
-
-# 3. 📐 Understanding the Mean / Median Gap
-
-The large difference between:
-
-```text
-Median error = 0.52 px
-Mean error   = 92.30 px
-```
-
-is not simply random noise.
-
-It reflects two genuinely different performance regimes:
-
-```text
-                    100 Test Pairs
-                          │
-             ┌────────────┴────────────┐
-             │                         │
-             ▼                         ▼
-       Majority of pairs         Smaller subset
-       highly accurate           catastrophic failures
-             │                         │
-             ▼                         ▼
-       sub-pixel scale             very large error
-             │                         │
-             └────────────┬────────────┘
-                          ▼
-                Mean strongly affected
-                by catastrophic cases
-```
-
-The majority of pairs are localized at or near sub-pixel accuracy, while approximately **19–20%** of cases fail badly enough to dominate the mean.
-
-Therefore:
-
-- **Median alone** would overstate overall reliability.
-- **Mean alone** would understate typical-case performance.
-- Both are reported deliberately.
-
-This is an important characteristic of the current model and should not be hidden by reporting only one statistic.
-
----
-
-# 4. ⚡ Inference Timing
-
-Inference was measured using 1000 × 1000 image pairs.
-
-| Device | Mean Time / Pair |
+| Device | Mean time per pair |
 |---|---:|
-| **GPU — RTX 4050 Laptop, 6 GB, CUDA 12.1** | **9.56 ms** |
-| **CPU — forced CPU execution** | **71.36 ms** |
+| GPU — RTX 4050 Laptop, 6GB VRAM, CUDA 12.1 | **9.56 ms** |
+| CPU — forced CPU execution | **71.36 ms** |
 
-### GPU measurement
+### Measurement protocol
 
-```text
-Runs: 50
-Warmup: 5 runs
-Synchronization: torch.cuda.synchronize()
-```
+- GPU: mean over 50 runs
+- GPU warmup: 5 runs
+- GPU timing bounded using `torch.cuda.synchronize()`
+- CPU: mean over 20 runs
+- CPU warmup: 3 runs
 
-### CPU measurement
-
-```text
-Runs: 20
-Warmup: 3 runs
-```
-
-Both execution modes are comfortably fast for per-pair inference.
-
-`inference.py` automatically detects the available execution device:
-
-```text
-CUDA available
-      ↓
-GPU inference
-
-CUDA unavailable
-      ↓
-CPU inference
-```
-
-No source-code modification is required.
+`submission_model/inference.py` automatically detects CUDA and falls back
+to CPU when necessary. No code changes are required for either mode.
 
 ---
 
-# 5. 🔍 Failure Analysis
+# 3. Failure Analysis
 
-The failure-analysis workflow was designed to move beyond simply reporting errors.
+The analysis examined periodic-pattern ambiguity, image quality,
+geometric mismatch, DRAM pitch / information density, and generator
+parameter confounds.
 
-The investigation considered:
+## 3.1 Periodic Pitch-Repeat Lock-On
 
-1. Periodic-pitch-repeat lock-on
-2. Generator-parameter differences between successful and failed pairs
-3. Potential confounding between defect counts and pitch
-4. Pitch-dependent failure rates
-5. Reference-crop information density
-6. Targeted supplemental training
-7. Model confidence as a potential failure signal
+### Hypothesis
 
-The analysis is implemented in:
+Large errors might result from the model locking onto a visually similar
+but incorrect periodic repeat of the DRAM pattern:
 
 ```text
-failure_analysis/
-│
-├── analyze_v6_failures.py
-├── analyze_failure_causes.py
-└── analyze_pitch_density_bins.py
+predicted location ≈ true location + k × pitch
 ```
+
+### Direct test
+
+For the 25 worst-error cases:
+
+- `k` was searched from **−100 to +100** per axis.
+- Each sample's own `pitch_x_nm` / `pitch_y_nm` was used.
+- Pitch was converted to search-image pixels using the 10 nm/px scale.
+- A match required the error to fall within **0.25 × pitch** of an
+  integer pitch-multiple lattice point.
+
+### Result
+
+**7 / 25 cases (28%)** matched an integer pitch multiple.
+
+### Chance-baseline check
+
+The approximate geometric collision probability for a random error vector
+under this tolerance is:
+
+```text
+π × (0.25)² ≈ 19.6%
+```
+
+With `n = 25`, the standard error is approximately 8 percentage points.
+
+Therefore, 28% is only about one standard error above the approximately
+20% chance baseline.
+
+### Conclusion
+
+This test does **not** provide strong evidence that periodic pitch-repeat
+lock-on is the dominant failure mechanism.
+
+It also does not prove that periodicity contributes zero error. The result
+is best described as **inconclusive at this sample size**.
+
+The stronger evidence comes from the coarse-pitch / local-information
+analysis in Sections 3.3–3.5.
+
+An earlier test on a prior checkpoint produced 3/25 matches, closer to the
+chance baseline; the difference remains plausibly attributable to sampling
+variation at this small sample size.
 
 ---
 
-# 6. 🔁 Periodic Pitch-Repeat Lock-On
+## 3.2 Generator-Parameter Failure Analysis
 
-## 6.1 Hypothesis
+Every logged generator parameter was compared between:
 
-The initial hypothesis was:
+- **FAILURE:** error > 100 px
+- **SUCCESS:** error < 10 px
 
-> Large localization errors may occur because the model locks onto a visually similar but physically incorrect periodic repeat of the DRAM pattern.
+using Cohen's `d`.
 
-The expected error structure would approximately be:
+For the submitted `v6_train_v8` checkpoint:
 
-```text
-predicted location
-      ≈
-true location + k × pitch
-```
-
-for some integer `k`.
-
-This is a particularly plausible failure mechanism for highly periodic DRAM structures.
-
----
-
-## 6.2 Direct Test
-
-For the worst-error cases, the analysis checked whether the error vector:
-
-```text
-(dx, dy)
-```
-
-landed within one pitch-cell tolerance of an integer pitch multiple.
-
-Parameters:
-
-```text
-Tolerance:
-0.25 × pitch
-
-Pitch:
-sample-specific pitch_x_nm / pitch_y_nm
-
-Search-image conversion:
-divide by 10
-```
-
-Integer multiples searched:
-
-```text
-k ∈ [-100, 100]
-```
-
-per axis.
-
----
-
-## 6.3 Result
-
-On the submitted checkpoint:
-
-```text
-Model:
-driftsense_final.pt
-
-Dataset:
-eval_v5
-
-Worst cases:
-25
-```
-
-the result was:
-
-```text
-7 / 25 = 28%
-```
-
-of cases matching an integer pitch multiple within the defined tolerance.
-
----
-
-## 6.4 Chance-Baseline Check
-
-The analysis also compared this against the geometric chance probability.
-
-Given:
-
-```text
-Tolerance radius = 0.25 × pitch
-```
-
-the approximate geometric collision probability is:
-
-```text
-π × (0.25)²
-≈ 19.6%
-```
-
-for a random error vector to land near some pitch-multiple lattice point simply due to lattice density.
-
-With:
-
-```text
-n = 25
-```
-
-the standard error of the observed proportion is approximately:
-
-```text
-8 percentage points
-```
-
-Therefore:
-
-```text
-Observed: 28%
-Chance baseline: ~20%
-```
-
-The observed value is only about one standard error above the baseline.
-
----
-
-## 6.5 Conclusion
-
-The test does **not** provide strong evidence either for or against periodic lock-on as a meaningful failure contributor on the submitted checkpoint.
-
-This result is intentionally reported conservatively.
-
-An earlier test on a prior checkpoint showed:
-
-```text
-3 / 25
-```
-
-matching cases, which was closer to the chance baseline.
-
-The difference between the earlier and current values can plausibly be explained by sampling noise at this sample size rather than a confirmed change in failure mechanism.
-
-> **Important:** periodic lock-on should therefore not be presented as the confirmed dominant failure mode.
-
-The stronger evidence comes from the coarse-pitch / reference-density analysis described below.
-
----
-
-# 7. 📊 Generator-Parameter Failure Analysis
-
-The next analysis compared every logged generator parameter between:
-
-```text
-FAILURE:
-error > 100 px
-
-SUCCESS:
-error < 10 px
-```
-
-on `eval_v5`.
-
-One intermediate case was excluded.
-
-The analysis used **Cohen's d** to rank the separation between failure and success groups.
-
-For the submitted model:
-
-```text
-Checkpoint:
-v6_train_v8
-
-Failure group:
-n = 19
-
-Success group:
-n = 80
-
-Intermediate / excluded:
-n = 1
-```
-
----
-
-## 7.1 Ranked Parameter Separation
+- FAILURE: **19 pairs**
+- SUCCESS: **80 pairs**
+- Intermediate: **1 pair**
 
 | Rank | Parameter | Cohen's d | Interpretation |
 |---:|---|---:|---|
-| **1** | `n_missing_vias` | **−0.77** | Confounded — see Section 8 |
-| **2** | `search_quality` | **+0.51** | Real, independent factor |
-| **3** | `pitch_x_nm` | **+0.42** | Real, independent factor |
-| **4** | `ref_scale_factor` | **+0.40** | Weaker, plausibly secondary |
-| **5** | `pitch_y_nm` | **+0.34** | Real, independent factor |
+| 1 | `n_missing_vias` | −0.77 | Confounded — see Section 3.3 |
+| 2 | `search_quality` | +0.51 | Real, independent factor |
+| 3 | `pitch_x_nm` | +0.42 | Real, independent factor |
+| 4 | `ref_scale_factor` | +0.40 | Weaker, plausibly secondary |
+| 5 | `pitch_y_nm` | +0.34 | Real, independent factor |
 
-All other parameters showed:
-
-```text
-|d| < 0.35
-```
-
-including:
-
-- Rotation
-- Elastic warp
-- Vignette
-- Scan-line variation
-- Fractal background
-- Defect counts other than missing-via
-
-These showed negligible-to-small individual separation in this analysis.
+All other parameters—including rotation, elastic warp, vignette,
+scanline variation, fractal background, and defect counts other than
+missing-via count—showed `|d| < 0.35`.
 
 ---
 
-# 8. ⚠️ Confound Discovery: Missing-Via Count
+## 3.3 Confound Discovery — `n_missing_vias` Is a Pitch Proxy
 
-The strongest raw parameter signal was:
-
-```text
-n_missing_vias
-```
-
-with:
-
-```text
-Cohen's d = -0.77
-```
-
-Initially, this could appear to suggest that missing-via defects were the primary cause of failures.
-
-Further investigation showed that this interpretation would be misleading.
-
----
-
-## 8.1 Why It Is Confounded
-
-The generator lays the via grid across a fixed-size world.
-
-Therefore:
-
-```text
-Finer pitch
-     ↓
-More via sites fit into the same physical area
-     ↓
-More opportunities for missing vias
-     ↓
-Higher raw missing-via count
-```
-
-Mathematically, raw missing-via count scales mechanically with approximately:
+The initial strongest signal was `n_missing_vias`. Inspection of
+`create_world()` showed that the via grid spans a fixed-size physical
+world, so raw missing-via count scales mechanically with:
 
 ```text
 1 / (pitch_x × pitch_y)
 ```
 
-Therefore the count is partly a proxy for pitch.
+Finer pitch means more via sites fit into the same physical area.
 
----
-
-## 8.2 Direct Verification
-
-Measured correlation between:
-
-```text
-n_missing_vias
-```
-
-and:
-
-```text
-1 / (pitch_x_nm × pitch_y_nm)
-```
-
-was:
+### Verified correlations
 
 | Dataset | Correlation |
 |---|---:|
 | `eval_v5` | **0.755** |
 | `val_v5` | **0.711** |
 
-This confirms that the apparent predictive power of `n_missing_vias` is substantially redundant with the pitch signal.
-
-> **Conclusion:** missing-via count should not be interpreted as an independent causal explanation for the failure pattern.
+Therefore, raw `n_missing_vias` should **not** be treated as an independent
+root cause. Its apparent predictive power is substantially redundant with
+pitch.
 
 ---
 
-# 9. 📐 Root Cause: Coarse Pitch Reduces Local Information
+## 3.4 Root Cause — Coarse Pitch Reduces Local Reference-Crop Information
 
-The stronger physical hypothesis is:
-
-> A coarse DRAM pitch reduces the amount of distinguishing local structure contained inside the fixed-size reference crop.
-
-The reference crop represents a fixed physical region:
+The reference crop represents approximately:
 
 ```text
 1000 nm × 1000 nm
 ```
 
-At coarse pitch:
+At coarser pitch, fewer via sites and repeating structural landmarks fit
+inside this fixed physical window. The crop therefore contains less local
+structure with which to distinguish the true location.
+
+Conceptually:
 
 ```text
 Larger pitch
-      ↓
-Fewer via sites / repeated structures
-      ↓
-Less local structural information
-      ↓
-Fewer distinguishing features available to the model
-      ↓
-Higher localization difficulty
+    ↓
+Fewer local structural landmarks
+    ↓
+Lower reference-crop information density
+    ↓
+Harder localization
 ```
 
-This explanation is independent of where the model eventually makes its wrong prediction.
+### Binned failure-rate analysis
 
----
+To avoid the missing-via confound, failure was analyzed directly against
+`pitch_x_nm` on the pre-supplement checkpoint `v6_train_v7`, using
+`eval_v5`.
 
-# 10. 📈 Non-Confounded Binned Pitch Analysis
-
-The hypothesis was tested by directly binning samples by pitch rather than by the confounded via-count proxy.
-
-The analysis was performed on:
-
-```text
-Checkpoint:
-v6_train_v7
-
-Dataset:
-eval_v5
-```
-
----
-
-## 10.1 Failure Rate by Pitch
-
-| `pitch_x_nm` Bin | n | Failure Rate >100 px |
+| `pitch_x_nm` bin | n | Failure rate (>100 px) |
 |---|---:|---:|
 | 40.6–57.1 | 20 | **10.0%** |
 | 57.1–73.6 | 20 | **20.0%** |
@@ -580,468 +229,263 @@ eval_v5
 | 93.4–106.6 | 20 | **30.0%** |
 | 106.6–119.3 | 20 | **35.0%** |
 
-This shows a clean monotonic increase:
+The failure rate rises monotonically from **10% to 35%**, approximately
+a **3.5× increase**.
 
-```text
-Fine pitch
-   │
-   │ 10%
-   │
-   │       20%
-   │
-   │             30%
-   │
-   │                   30%
-   │
-   │                         35%
-   ▼
-Coarse pitch
-```
-
-The failure rate rises approximately:
-
-```text
-3.5×
-```
-
-from the finest to the coarsest pitch bin.
-
----
-
-## 10.2 Replication
-
-The same direction of trend was replicated on:
-
-```text
-val_v5
-```
-
-with failure rates ranging from:
+The same directional trend was replicated on `val_v5`:
 
 ```text
 13.3% → 35.0%
 ```
 
-The trend was also independently reproduced using:
-
-```text
-ref_via_density_estimate
-```
-
-defined as the estimated number of via sites per reference crop.
-
-The via-density variable showed the same relationship in the opposite direction:
-
-```text
-Higher via density
-      ↓
-Lower failure rate
-
-Lower via density
-      ↓
-Higher failure rate
-```
-
-This provides mutually consistent evidence for the local-information-density explanation.
+and independently reproduced using a derived
+`ref_via_density_estimate` variable representing via sites per reference
+crop.
 
 ---
 
-# 11. 🛠️ Targeted Intervention
+## 3.5 Targeted Intervention — Coarse-Pitch Supplemental Training
 
-Once coarse pitch was identified as a strong non-confounded failure factor, a targeted dataset intervention was performed.
-
-A supplemental dataset of:
-
-```text
-4,000 pairs
-```
-
-was generated specifically in:
+A targeted supplemental dataset was generated after identifying the
+coarse-pitch regime as a measurable weakness:
 
 ```text
-80–120 nm pitch
+4,000 supplemental pairs
+pitch range: 80–120 nm
 ```
 
-using:
+The original base dataset contained 9,000 pairs. The supplemental data were
+merged to create `train_v8`.
 
-```bash
---pitch_min 80
---pitch_max 120
-```
+The architecture, loss configuration, and training procedure were kept
+unchanged so that training-data composition was the intended changed
+variable.
 
-All other parameters remained on the `medium` profile.
+### Before vs. after
 
-The supplemental set was merged with the original:
+Results on the same independent `eval_v5` set:
 
-```text
-9,000-pair base dataset
-```
-
-giving:
-
-```text
-13,000 total training pairs
-```
-
-The model architecture and loss configuration were kept unchanged.
-
-This was intended to isolate **training-data composition** as the changed variable.
-
----
-
-# 12. 📊 Before vs. After Supplemental Training
-
-Evaluation was performed on the same:
-
-```text
-eval_v5
-```
-
-test set.
-
-| Metric | Before — `train_v7` | After — + Coarse-Pitch Supplement |
+| Metric | Before — `train_v7` | After — `train_v8` |
 |---|---:|---:|
 | Validation mean error | 96.74 px | **76.60 px** |
 | Test mean error | 113.70 px | **92.30 px** |
-| Failure rate >100 px | 25% | **19%** |
-| Success rate <10 px | 73% | **80%** |
+| Failure rate (>100 px) | 25% | **19%** |
+| Success rate (<10 px) | 73% | **80%** |
 | `pitch_x_nm` Cohen's d | +0.56 | **+0.42** |
 
----
+Observed improvements:
 
-## 12.1 Interpretation
+- Validation mean error: approximately **21% reduction**
+- Test mean error: approximately **19% reduction**
+- Failure rate: **25% → 19%**
+- Success rate: **73% → 80%**
+- Pitch-related Cohen's `d`: **+0.56 → +0.42**
 
-The intervention produced improvements in multiple related measurements:
+The pitch-related effect was reduced but not eliminated.
 
-```text
-Validation mean error
-96.74 → 76.60 px
-
-Test mean error
-113.70 → 92.30 px
-
-Failure rate
-25% → 19%
-
-Success rate
-73% → 80%
-
-Pitch Cohen's d
-+0.56 → +0.42
-```
-
-The shrinkage in pitch-related Cohen's d is especially informative.
-
-The targeted intervention reduced the measured separation associated with the regime it was designed to address.
-
-This is directionally consistent with the original hypothesis.
-
-However:
-
-> The effect was **not eliminated**.
-
-Residual pitch-related difficulty remains.
-
-The report therefore treats the intervention as evidence supporting the diagnosis, rather than claiming that the problem has been completely solved.
+> This is intervention evidence rather than a randomized causal experiment:
+> the supplement was deliberately designed from the observed failure
+> pattern. The independent test set remained untouched.
 
 ---
 
-# 13. 🎯 Model Confidence as a Potential Failure Signal
+## 3.6 Model Confidence as a Failure Signal
 
-The model's own peak-probability output was also examined as a possible deployment-time uncertainty signal.
+The model's peak-probability output may be useful as a deployment-time
+uncertainty flag.
 
 On the submitted checkpoint's `eval_v5` run:
 
-### Catastrophic failures
+- catastrophic failures (`error > 100 px`) typically had peak probability
+  around **0.001–0.07**,
+- accurate predictions typically had peak probability around **0.08–0.11**.
+
+However, the signal is not perfect. For example:
 
 ```text
-Error > 100 px
+pair 057
+error = 315 px
+peak probability = 0.098
 ```
 
-typically showed:
-
-```text
-Peak probability:
-~0.001–0.07
-```
-
-### Accurate predictions
-
-typically showed:
-
-```text
-Peak probability:
-~0.08–0.11
-```
-
-This suggests that the model's confidence may provide a useful practical signal for flagging uncertain predictions.
+Therefore, confidence should be treated as a **useful heuristic for
+flagging suspicious predictions**, not as a calibrated standalone failure
+detector.
 
 ---
 
-## 13.1 Important Limitation
+# 4. Summary of Findings
 
-The confidence signal is **not a reliable failure detector by itself**.
+## What works
 
-At least two failure cases showed confidence within the normal range.
+- **80%** of independent test pairs are localized within **10 px**.
+- Median localization error is **0.52 px**.
+- GPU inference averages **9.56 ms per pair**.
+- CPU inference averages **71.36 ms per pair**.
+- Targeted coarse-pitch supplementation improves performance.
 
-Example:
+## What was investigated
+
+The periodic-repeat hypothesis was tested directly. The worst-25 test
+produced **7/25 (28%)** pitch-multiple matches against an estimated
+**19.6% chance baseline**.
+
+Because of the small sample size, this evidence is **inconclusive** rather
+than sufficient to establish periodic lock-on as the dominant mechanism.
+
+## Stronger evidence
+
+The more reproducible failure pattern is:
 
 ```text
-Pair 057
-Error = 315 px
-Peak probability = 0.098
+Coarser DRAM pitch
+        ↓
+Fewer local structural landmarks
+        ↓
+Lower reference-crop information density
+        ↓
+Higher localization failure rate
 ```
 
-Therefore:
+This relationship:
 
-```text
-Confidence
-    ↓
-Useful heuristic
-    ≠
-Guaranteed failure detector
-```
+- survives the missing-via confound check,
+- appears as a monotonic binned trend,
+- replicates on the validation set,
+- and responds to targeted supplemental training.
 
-A production deployment should treat confidence as an additional uncertainty signal rather than a definitive decision rule.
+## Remaining limitation
+
+The final independent test set still contains a **19% catastrophic
+failure rate** using the `error > 100 px` threshold.
+
+The remaining failures are concentrated particularly in the coarse-pitch /
+lower-information regime, with `search_quality` also showing meaningful
+independent separation.
+
+A supported next experiment is therefore a targeted `search_quality`
+supplement using the same failure-analysis → targeted-data-generation →
+retraining → untouched-test methodology.
 
 ---
 
-# 14. 🧠 Evidence Chain
+# 5. Reproducibility
 
-The evaluation process can be summarized as an evidence-driven loop:
-
-```text
-Initial Model
-     │
-     ▼
-Independent Evaluation
-     │
-     ▼
-Large Failure Subset Identified
-     │
-     ▼
-Hypothesis:
-Periodic Repeat Lock-On
-     │
-     ▼
-Direct Test
-     │
-     ▼
-Evidence Inconclusive
-     │
-     ▼
-Analyze Generator Parameters
-     │
-     ▼
-Missing-Via Count Appears Strong
-     │
-     ▼
-Confound Check
-     │
-     ▼
-Missing-Via Count ↔ Pitch
-     │
-     ▼
-Confound Identified
-     │
-     ▼
-Direct Pitch Binning
-     │
-     ▼
-Monotonic Failure-Rate Trend
-     │
-     ▼
-Coarse-Pitch / Low-Density Hypothesis
-     │
-     ▼
-Targeted 4,000-Pair Supplement
-     │
-     ▼
-Retrain
-     │
-     ▼
-Independent Evaluation
-     │
-     ▼
-Measured Improvement
-```
-
-This is the central experimental reasoning behind the current V6 training dataset.
-
----
-
-# 15. 🧪 Reproducibility
-
-The failure-analysis scripts used to produce these findings are included in the repository:
+Relevant repository components include:
 
 ```text
+submission_model/
+    inference.py
+    model_v6.py
+    driftsense_final.pt
+
 failure_analysis/
-├── analyze_v6_failures.py
-├── analyze_failure_causes.py
-└── analyze_pitch_density_bins.py
+    analyze_v6_failures.py
+    analyze_failure_causes.py
+    analyze_pitch_density_bins.py
+    model_v6.py
+    dram_dataset.py
 ```
 
-They can be rerun against the submitted checkpoint.
+Independent test set:
 
-### Periodic-repeat analysis
+```text
+eval_v5
+profile = medium
+seed = 24681357
+n = 100
+```
+
+Validation set:
+
+```text
+val_v5
+profile = medium
+seed = 13579246
+n = 300
+```
+
+Training composition:
+
+```text
+train_v7
+    9,000 base pairs
+
++
+
+train_v7_coarse_pitch
+    4,000 supplemental pairs
+    pitch = 80–120 nm
+
+=
+
+train_v8
+```
+
+The submitted model was produced using the V6 architecture and training
+configuration specified in `README.md`.
+
+### Failure-analysis commands
 
 ```bash
 cd failure_analysis
 
-python analyze_v6_failures.py \
-    --checkpoint ../submission_model/driftsense_final.pt \
-    --data_dir ../eval_v5 \
-    --n_worst 25
-```
+python analyze_v6_failures.py     --checkpoint ../submission_model/driftsense_final.pt     --data_dir ../eval_v5     --n_worst 25
 
-### Failure-cause comparison
+python analyze_failure_causes.py     --checkpoint ../submission_model/driftsense_final.pt     --data_dir ../eval_v5
 
-```bash
-python analyze_failure_causes.py \
-    --checkpoint ../submission_model/driftsense_final.pt \
-    --data_dir ../eval_v5
-```
-
-### Pitch / density analysis
-
-```bash
-python analyze_pitch_density_bins.py \
-    --checkpoint ../submission_model/driftsense_final.pt \
-    --data_dir ../eval_v5 \
-    --n_bins 5
+python analyze_pitch_density_bins.py     --checkpoint ../submission_model/driftsense_final.pt     --data_dir ../eval_v5     --n_bins 5
 ```
 
 ---
 
-# 16. 📋 Final Results Summary
+# 6. Final Assessment
 
-## Core Performance
+DriftSense demonstrates strong localization capability on the majority of
+independent test samples, with **sub-pixel median accuracy** and
+millisecond-scale inference on the tested GPU.
 
-- **80 / 100 (80.0%)** of independent test pairs localized within **10 px**.
-- **81 / 100 (81.0%)** localized within **100 px**.
-- Median localization error was **0.52 px**.
-- Best individual error was **0.04 px**.
-- Worst individual error was **818.84 px**.
-- Mean error was **92.30 px**.
+The evaluation deliberately exposes the remaining weakness rather than
+hiding it behind a single headline metric.
 
-## Runtime
+The most important result is that the remaining failures can be
+**measured, investigated, confound-checked, and acted upon**.
 
-- **9.56 ms/pair** on RTX 4050 Laptop GPU.
-- **71.36 ms/pair** on CPU.
-
-## Failure Analysis
-
-- Periodic-pitch-repeat lock-on was **tested directly**.
-- The result was **not strong enough to establish periodic lock-on as the dominant mechanism**.
-- `n_missing_vias` initially appeared strongly associated with failures, but was shown to be **confounded with pitch**.
-- Coarse pitch showed a clear, monotonic relationship with failure rate.
-- Lower estimated via density inside the fixed reference crop showed the same relationship.
-- A targeted coarse-pitch supplemental dataset produced measurable improvement.
-
----
-
-# 17. ⚠️ Known Limitations
-
-The current model has an important residual limitation:
+The demonstrated closed-loop methodology is:
 
 ```text
-~19% catastrophic-failure rate
-```
-
-on the reported `eval_v5` set when catastrophic failure is defined as:
-
-```text
-error > 100 px
-```
-
-The remaining failures are concentrated particularly in:
-
-```text
-Coarse-pitch regimes
-+
-Lower-quality search images
-```
-
-The evidence-supported next step is therefore **not** to randomly enlarge the dataset, but to continue the same targeted methodology.
-
-A logical next intervention would be:
-
-```text
-Search-quality-focused supplemental dataset
-```
-
-followed by the same:
-
-```text
-Generate
-  ↓
-Train
-  ↓
 Evaluate
-  ↓
-Analyze
-  ↓
-Intervene
-  ↓
-Re-evaluate
+   ↓
+Identify failure regime
+   ↓
+Check confounds
+   ↓
+Form physical/data hypothesis
+   ↓
+Generate targeted data
+   ↓
+Retrain
+   ↓
+Evaluate on untouched test set
+   ↓
+Measure improvement
 ```
 
-workflow.
+The coarse-pitch intervention reduced independent-test mean error from
+**113.70 px to 92.30 px**, reduced catastrophic failure from **25% to
+19%**, increased the success rate from **73% to 80%**, and reduced the
+pitch-related Cohen's `d` from **+0.56 to +0.42**.
 
----
+No claim is made that the current model completely solves every possible
+navigation-error condition. Instead, the evaluation establishes a
+reproducible baseline, tests the original periodicity hypothesis,
+identifies a confound, finds a stronger failure pattern, applies a
+targeted intervention, and measures the resulting improvement on an
+untouched independent test set.
 
-# 18. 🏁 Conclusion
-
-DriftSense demonstrates a strong typical-case localization capability:
-
-> **Median error = 0.52 px**
-
-while achieving:
-
-> **80% success within 10 px on an untouched 100-pair test set.**
-
-At the same time, the evaluation deliberately exposes the model's current weakness rather than hiding it behind a favorable statistic.
-
-The large mean/median gap reveals a distinct catastrophic-failure regime.
-
-The investigation then followed a falsifiable, evidence-driven process:
-
-```text
-Hypothesis
-   ↓
-Direct test
-   ↓
-Confound analysis
-   ↓
-Binned analysis
-   ↓
-Targeted intervention
-   ↓
-Independent verification
-```
-
-The strongest confirmed remaining difficulty is associated with:
-
-```text
-coarse DRAM pitch
-+
-low local reference-crop information density
-```
-
-and a targeted supplemental training set produced a measurable improvement:
-
-```text
-Failure rate:
-25% → 19%
-
-Success rate (<10 px):
-73% → 80%
-
-Test mean error:
-113.70 → 92.30 px
-```
-
-The remaining limitation is explicitly acknowledged, and the report provides a reproducible path for further improvement.
+The strongest evidence-supported next step is further targeted data
+generation around the difficult coarse-pitch and lower-quality regimes,
+particularly investigating a `search_quality`-focused supplement.
 
 ---
 
@@ -1049,8 +493,8 @@ The remaining limitation is explicitly acknowledged, and the report provides a r
 
 ### 🔬 DriftSense
 
-**Measure → Analyze → Diagnose → Intervene → Verify**
+**Measured honestly · Failure modes investigated · Improvements verified**
 
-*Evaluation is treated as an engineering feedback loop, not just a final score.*
+*Independent test set · Reproducible analysis · Evidence-driven iteration*
 
 </div>
