@@ -14,7 +14,7 @@
 </div>
 
 ---
-## 🔬 NanoNav
+## 🔬 Team NanoNav
 ### **Navigate. Locate. Verify.**
 
 > * **Karan Choudhary** ([@K478-tech](https://github.com/K478-tech))
@@ -28,11 +28,12 @@
 
 # 🧭 Overview
 
-**DriftSense** is an AI-powered navigation-error recovery system designed for semiconductor wafer inspection tools.
+> **NanoNav** is the team/project identity behind **DriftSense**, our AI-powered navigation-error recovery system for semiconductor wafer inspection tools.
 
-The system localizes a small SEM reference-image crop inside a larger SEM search image of the **same physical DRAM region**, while handling scale differences, periodic structures, imaging variation, and navigation uncertainty.
+**DriftSense** localizes a small SEM reference-image crop inside a larger SEM search image of the **same physical DRAM region**, while handling scale differences, periodic structures, imaging variation, and navigation uncertainty.
 
 ### Core Task
+
 
 - Reference SEM crop: **1000 × 1000**, **1 nm/px**
 - Search SEM image: **1000 × 1000**, **10 nm/px**
@@ -40,6 +41,34 @@ The system localizes a small SEM reference-image crop inside a larger SEM search
 - Output: sub-pixel **`(x, y)`** center in search-image pixel coordinates.
 
 > 🎯 **Primary challenge:** Disambiguating the true physical match from visually similar periodic repeats in DRAM structures.
+
+---
+
+# 💡 Solution at a Glance
+
+NanoNav/DriftSense addresses wafer-navigation recovery as a **learned spatial-localization problem**:
+
+```bash
+Reference SEM Crop
+        +
+Search SEM Image
+        │
+        ▼
+   DriftSense AI
+        │
+        ▼
+ Spatial Localization
+        │
+        ▼
+   Sub-pixel (x, y)
+        │
+        ▼
+ Navigation Recovery
+```
+
+### Why it matters
+
+Periodic semiconductor structures can contain many visually similar regions. The system therefore focuses on identifying the **correct physical location**, rather than performing only a generic image-similarity comparison.
 
 ---
 
@@ -58,7 +87,7 @@ Wafer inspection tools repeatedly navigate to precise physical locations on semi
 
 For periodic structures such as DRAM, many locations can look visually similar. DriftSense therefore treats the task as a **learned spatial-localization problem**:
 
-```text
+```bash
 Reference SEM Crop
         │
         ▼
@@ -118,7 +147,7 @@ Given a small high-resolution SEM reference image and a larger lower-resolution 
 
 ### Output
 
-```text
+```bash
 (x, y)
 ```
 
@@ -131,8 +160,8 @@ Given a small high-resolution SEM reference image and a larger lower-resolution 
 
 # 📁 4. Repository Structure
 
-```text
-DriftSense/
+```bash
+NanoNav/
 │
 ├── dataset_generator/
 │   └── generate_dram_dataset_v3.py
@@ -162,6 +191,24 @@ DriftSense/
 ├── requirements.txt
 └── README.md
 ```
+
+---
+
+# 🚀 Quick Navigation
+
+| Section | What it contains |
+|---|---|
+| 🧭 Overview | What NanoNav/DriftSense does |
+| 🧠 Problem | Navigation-error recovery challenge |
+| 🏗️ Architecture | DRAM choice and rationale |
+| 🚀 Quick Start | Run the submitted model immediately |
+| 🧪 Dataset | Generate DRAM training/test data |
+| 🏋️ Training | Reproduce the training pipeline |
+| 🚀 Inference | Run the final model |
+| 🔍 Failure Analysis | Analyze model failures |
+| 📊 Evaluation | Results and evaluation documentation |
+| 🛠️ Troubleshooting | Common setup/runtime issues |
+| 👥 Team NanoNav | Team and project identity |
 
 ---
 
@@ -195,7 +242,7 @@ python -c "import sys; print(sys.executable); print(sys.version)"
 
 Expected:
 
-```text
+```bash
 Python 3.11.x
 ```
 
@@ -221,7 +268,7 @@ https://www.python.org/downloads/
 
 ```cmd
 py -3.11 -m venv venv_drift
-venv_drift\Scriptsctivate.bat
+venv_drift\Scripts\activate.bat
 python --version
 ```
 
@@ -230,7 +277,7 @@ python --version
 ```powershell
 py -3.11 -m venv venv_drift
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
-.env_drift\Scripts\Activate.ps1
+.\venv_drift\Scripts\Activate.ps1
 python --version
 ```
 
@@ -244,7 +291,7 @@ python --version
 
 After activation, the terminal should show:
 
-```text
+```bash
 (venv_drift)
 ```
 
@@ -256,7 +303,7 @@ python --version
 
 It must report:
 
-```text
+```bash
 Python 3.11.x
 ```
 
@@ -317,7 +364,7 @@ python dataset_generator\generate_dram_dataset_v3.py --n_pairs 1 --out_dir .\sam
 
 This creates:
 
-```text
+```bash
 sample/
 ├── reference/
 │   └── ref_00000.png
@@ -335,7 +382,7 @@ python submission_model\inference.py .\sample\reference\ref_00000.png .\sample\s
 
 Expected format:
 
-```text
+```bash
 (x.xx, y.xx)
 ```
 
@@ -343,7 +390,7 @@ The exact values depend on the generated sample.
 
 Compare the prediction with the ground-truth `center_x` and `center_y` values in:
 
-```text
+```bash
 sample/labels.csv
 ```
 
@@ -353,7 +400,7 @@ sample/labels.csv
 
 The standalone DRAM dataset generator supports:
 
-```text
+```bash
 --n_pairs <N>
 --out_dir <DIR>
 --profile {easy,medium,hard}
@@ -385,7 +432,7 @@ The default style is `dram`. `finfet` is not implemented.
 
 ### Dataset Output
 
-```text
+```bash
 <DIR>/
 ├── reference/
 │   ├── ref_00000.png
@@ -431,7 +478,7 @@ The default style is `dram`. `finfet` is not implemented.
 
 The dataset represents repeating semiconductor structures containing:
 
-```text
+```bash
 DRAM Layout
 │
 ├── Periodic memory-cell structure
@@ -442,7 +489,7 @@ DRAM Layout
 
 The periodic nature creates the central localization challenge:
 
-```text
+```bash
 Many regions look similar
         ↓
 Visual matching becomes ambiguous
@@ -458,7 +505,7 @@ Correct physical location is recovered
 
 The submitted checkpoint is:
 
-```text
+```bash
 submission_model/driftsense_final.pt
 ```
 
@@ -498,7 +545,7 @@ python training\merge_train_v8.py
 
 This creates:
 
-```text
+```bash
 train_v8/
 ```
 
@@ -550,7 +597,7 @@ An independent **100-pair** test set was held out from:
 
 Configuration:
 
-```text
+```bash
 Dataset: eval_v5
 Pairs: 100
 Seed: 24681357
@@ -558,7 +605,7 @@ Seed: 24681357
 
 The held-out results are documented in:
 
-```text
+```bash
 evaluation_report.md
 ```
 
@@ -580,14 +627,14 @@ python submission_model\inference.py .\sample\reference\ref_00000.png .\sample\s
 
 Input requirements:
 
-```text
+```bash
 Reference: 1000 × 1000 grayscale PNG, 1 nm/px
 Search:    1000 × 1000 grayscale PNG, 10 nm/px
 ```
 
 Output:
 
-```text
+```bash
 (x, y)
 ```
 
@@ -608,7 +655,7 @@ No manual model-path or device changes are required.
 
 The repository contains:
 
-```text
+```bash
 failure_analysis/
 ├── analyze_v6_failures.py
 ├── analyze_failure_causes.py
@@ -658,7 +705,7 @@ The documented evaluation reports that:
 
 Detailed results are available in:
 
-```text
+```bash
 evaluation_report.md
 ```
 
@@ -678,7 +725,7 @@ For failure-analysis reruns, `eval_v5` must be generated first, or an equivalent
 
 # 🧭 16. Navigation Recovery Pipeline
 
-```text
+```bash
         SEM Inspection Tool
                 │
                 ▼
@@ -708,7 +755,7 @@ For failure-analysis reruns, `eval_v5` must be generated first, or an equivalent
 
 # 📈 17. Complete Reproduction Pipeline
 
-```text
+```bash
 Generate 9,000-pair base dataset
               ↓
 Generate 4,000-pair coarse-pitch dataset
@@ -746,7 +793,7 @@ Run failure analysis
 
 ### General Diagnostic Checklist
 
-```text
+```bash
 1. Are you in the repository root?
        ↓
 2. Is (venv_drift) active?
@@ -833,7 +880,7 @@ DriftSense approaches wafer-navigation recovery as a **learned spatial-localizat
 
 The system combines:
 
-```text
+```bash
 DRAM-specific synthetic data
           +
 Multi-scale SEM image generation
@@ -855,11 +902,9 @@ This is critical for navigation-error recovery in periodic semiconductor structu
 
 ---
 
-## 🔬 DriftSense
+**Powered by DriftSense — AI-Powered Navigation-Error Recovery for Wafer Inspection Tools**
 
-### **AI-Powered Navigation-Error Recovery for Wafer Inspection Tools**
-
-```text
+```bash
 Reference SEM Image
         +
 Search SEM Image
@@ -874,4 +919,4 @@ Search SEM Image
  Accurate Site Recovery
 ```
 
-**SEMICON India Hackathon 2026 — Track 2 — Problem Statement 02**
+**Team NanoNav • SEMICON India Hackathon 2026 — Track 2 — Problem Statement 02**
