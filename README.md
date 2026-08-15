@@ -362,6 +362,56 @@ python dataset_generator/generate_dram_dataset_v3.py \
     [--style dram] \
     [--pitch_min <NM> --pitch_max <NM>]
 ```
+## 📂 Dataset Output Structure & Naming Conventions
+
+When you run `generate_dram_dataset_v3.py`, the output directory and image filenames follow strict, deterministic patterns.
+
+### 1. Default vs. Custom Output Directories
+
+* **Default Run (No `--out_dir` passed):**
+  Generates 30 pairs into `./dram_dataset_v3/`
+```bash
+  python dataset_generator/generate_dram_dataset_v3.py
+```
+
+Explicit Output Directory (Recommended):
+- Generates $N$ pairs into your specified target folder (e.g., ./sample, ./train_v7, ./eval_v5)
+- python dataset_generator/generate_dram_dataset_v3.py --n_pairs 1 --out_dir ./sample --profile medium --seed 1
+
+### 2. File Naming RulesInside any generated output directory ( <DIR>/ ), files are structured as follows:
+```bash
+<DIR>/
+├── reference/
+│   ├── ref_00000.png
+│   ├── ref_00001.png
+│   └── ...
+├── search/
+│   ├── search_00000.png
+│   ├── search_00001.png
+│   └── ...
+├── labels.csv
+├── config.json
+└── generation_log.txt
+```
+
+#### ⚠️ Important Naming Note for Inference & Scripting:Reference images are named ref_XXXXX.png (located inside <DIR>/reference/ ).
+
+Search images are named search_XXXXX.png ( located inside <DIR>/search/ ).Image indices are zero-padded to 5 digits (00000, 00001, 00002, etc.).Do not prefix paths with pair_ or append _ref/_search manually.
+
+### 3. Quick Verification ExamplesBash# Correct inference path for a custom ./sample run:
+
+```bash
+python submission_model/inference.py ./sample/reference/ref_00000.png ./sample/search/search_00000.png
+```
+
+### Correct inference path for a default ./dram_dataset_v3 run:
+```bash
+python submission_model/inference.py ./dram_dataset_v3/reference/ref_00000.png ./dram_dataset_v3/search/search_00000.png
+```
+
+**- Key Improvements Made**: Directly addresses the error you hit: Highlights the ref_XXXXX.png vs pair_ naming confusion.
+**- Explains default script behavior**: Clarifies why running without flags creates ./dram_dataset_v3/ while passing --out_dir ./sample creates ./sample/.
+**- Copy-paste ready paths**: Gives the exact working commands for both directory structures.
 
 ## 7.1 Generator Options
 
@@ -480,9 +530,7 @@ Each generator run writes:
 ```
 
 ## 8.1 `labels.csv`
-
 `labels.csv` contains:
-
 - Ground-truth center coordinates
 - Reference/search paths
 - Pitch
@@ -695,7 +743,6 @@ The resulting dataset is:
 ```bash
 train_v8/
 ```
-
 ---
 
 ## Step 5 — Train the Model
