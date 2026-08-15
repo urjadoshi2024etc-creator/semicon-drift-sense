@@ -174,11 +174,8 @@ This is intentionally a **simplified heuristic**, rather than an implementation 
 
 The patent provides a closed-form line-scan model:
 
-```text
-SE(x) / SE(∞)
-=
-1 + αe · e^(−x/σe) − αv · e^(−x/σv)
-```
+$$\frac{\text{SE}(x)}{\text{SE}(\infty)} = 1 + \alpha_e e^{-x/\sigma_e} - \alpha_v e^{-x/\sigma_v}$$
+
 
 This represents edge brightness as a combination of enhanced secondary-electron escape and reduced interaction-volume effects.
 
